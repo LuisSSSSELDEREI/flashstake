@@ -1,0 +1,40 @@
+# eclipse
+bin/
+*.launch
+.settings/
+.metadata
+.classpath
+.project
+
+# idea
+out/
+*.ipr
+*.iws
+*.iml
+.idea/
+
+# gradle
+build/
+.gradle/
+
+# forge runs / local
+eclipse/
+run/
+runs/
+logs/
+crash-reports/
+
+# junk / archives
+mdk.zip
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# local secrets
+.env
+*.pem
+credentials.json
+
+# Files from Forge MDK
+forge*changelog.txt
