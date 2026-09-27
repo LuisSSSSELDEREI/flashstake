@@ -38,3 +38,7 @@ credentials.json
 
 # Files from Forge MDK
 forge*changelog.txt
+
+# helper scripts
+_do_*.sh
+_git_out.txt
