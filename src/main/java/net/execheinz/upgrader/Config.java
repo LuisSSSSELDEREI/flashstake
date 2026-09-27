@@ -1,5 +1,7 @@
 package net.execheinz.upgrader;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -26,8 +28,8 @@ public class Config {
     private static final ForgeConfigSpec.IntValue MARKET_STOCK_REFRESH = BUILDER.comment("How often server-wide buy stock refreshes, in minutes.").defineInRange("marketStockRefreshMinutes", 15, 1, 10080);
     private static final ForgeConfigSpec.IntValue MARKET_STOCK_MIN = BUILDER.comment("Minimum random stock per item on refresh.").defineInRange("marketStockMin", 0, 0, 10000);
     private static final ForgeConfigSpec.IntValue MARKET_STOCK_MAX = BUILDER.comment("Maximum random stock per item on refresh.").defineInRange("marketStockMax", 60, 0, 10000);
-    private static final ForgeConfigSpec.ConfigValue<List<? extends String>> VALUE_OVERRIDES = BUILDER.comment("Hard-coded item values, format 'modid:item=value'.").defineListAllowEmpty("valueOverrides", List.of(), o -> o instanceof String s && s.contains("="));
-    private static final ForgeConfigSpec.ConfigValue<List<? extends String>> BLACKLIST = BUILDER.comment("Items that can never be used as an input or picked as a target.").defineListAllowEmpty("blacklist", List.of(), o -> o instanceof String);
+    private static final ForgeConfigSpec.ConfigValue<List<? extends String>> VALUE_OVERRIDES = BUILDER.comment("Hard-coded item values, format 'modid:item=value'.").defineListAllowEmpty(Arrays.asList("valueOverrides"), ArrayList::new, o -> o instanceof String && ((String) o).contains("="));
+    private static final ForgeConfigSpec.ConfigValue<List<? extends String>> BLACKLIST = BUILDER.comment("Items that can never be used as an input or picked as a target.").defineListAllowEmpty(Arrays.asList("blacklist"), ArrayList::new, o -> o instanceof String);
     public static final ForgeConfigSpec SPEC = BUILDER.build();
 
     public static double houseEdge = 0.9;

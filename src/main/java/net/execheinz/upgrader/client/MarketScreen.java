@@ -1,5 +1,7 @@
 package net.execheinz.upgrader.client;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -14,7 +16,7 @@ import net.execheinz.upgrader.network.ServerboundMarketSellPacket;
 import net.execheinz.upgrader.network.ServerboundOpenUpgraderPacket;
 import net.execheinz.upgrader.value.ItemValues;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
+import net.execheinz.upgrader.client.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -148,7 +150,6 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
         this.searchBox = new EditBox(this.font, x + 12, y + 36, 160, 16, Component.translatable("gui.flashstake.search"));
         this.searchBox.setMaxLength(64);
         this.searchBox.setTextColor(UiTheme.TEXT);
-        this.searchBox.setHint(Component.translatable("gui.flashstake.search").withStyle(ChatFormatting.DARK_GRAY));
         this.searchBox.setResponder(t -> {
             this.scrollRow = 0;
             this.refilter();
@@ -157,7 +158,6 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
 
         this.minPriceBox = new EditBox(this.font, x + 210, y + 36, 48, 16, Component.literal("min"));
         this.minPriceBox.setMaxLength(10);
-        this.minPriceBox.setHint(Component.translatable("gui.flashstake.market.min"));
         this.minPriceBox.setTextColor(UiTheme.NEON_LIME);
         this.minPriceBox.setResponder(t -> {
             this.scrollRow = 0;
@@ -167,7 +167,6 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
 
         this.maxPriceBox = new EditBox(this.font, x + 270, y + 36, 48, 16, Component.literal("max"));
         this.maxPriceBox.setMaxLength(10);
-        this.maxPriceBox.setHint(Component.translatable("gui.flashstake.market.max"));
         this.maxPriceBox.setTextColor(UiTheme.NEON_MAGENTA);
         this.maxPriceBox.setResponder(t -> {
             this.scrollRow = 0;
@@ -495,9 +494,9 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(graphics);
-        super.render(graphics, mouseX, mouseY, partialTick);
+    public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
+        GuiGraphics graphics = GuiGraphics.of(poseStack);        this.renderBackground(poseStack);
+        super.render(graphics.pose(), mouseX, mouseY, partialTick);
         // Force buy qty controls above slots/panel so they stay clickable
         if (this.buyPanelOpen()) {
             this.renderBuyControls(graphics, mouseX, mouseY, partialTick);
@@ -542,27 +541,27 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
                 this.renderSellHover(graphics, mouseX, mouseY);
             }
         }
-        this.renderTooltip(graphics, mouseX, mouseY);
+        this.renderTooltip(graphics.pose(), mouseX, mouseY);
     }
 
     private void renderBuyControls(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         if (this.buyCancel != null) {
-            this.buyCancel.render(graphics, mouseX, mouseY, partialTick);
+            this.buyCancel.render(graphics.pose(), mouseX, mouseY, partialTick);
         }
         if (this.buyMinus != null) {
-            this.buyMinus.render(graphics, mouseX, mouseY, partialTick);
+            this.buyMinus.render(graphics.pose(), mouseX, mouseY, partialTick);
         }
         if (this.buyQtyBox != null) {
-            this.buyQtyBox.render(graphics, mouseX, mouseY, partialTick);
+            this.buyQtyBox.render(graphics.pose(), mouseX, mouseY, partialTick);
         }
         if (this.buyPlus != null) {
-            this.buyPlus.render(graphics, mouseX, mouseY, partialTick);
+            this.buyPlus.render(graphics.pose(), mouseX, mouseY, partialTick);
         }
         if (this.buyMax != null) {
-            this.buyMax.render(graphics, mouseX, mouseY, partialTick);
+            this.buyMax.render(graphics.pose(), mouseX, mouseY, partialTick);
         }
         if (this.buyConfirm != null) {
-            this.buyConfirm.render(graphics, mouseX, mouseY, partialTick);
+            this.buyConfirm.render(graphics.pose(), mouseX, mouseY, partialTick);
         }
     }
 
@@ -606,8 +605,8 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
     }
 
     @Override
-    protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
-        WheelRenderer.neonPanel(graphics, this.leftPos, this.topPos,
+    protected void renderBg(PoseStack poseStack, float partialTick, int mouseX, int mouseY) {
+        GuiGraphics graphics = GuiGraphics.of(poseStack);        WheelRenderer.neonPanel(graphics, this.leftPos, this.topPos,
             this.leftPos + this.imageWidth, this.topPos + this.imageHeight, 8, UiTheme.NEON_CYAN);
         if (this.buyPanelOpen()) {
             this.renderBuyPanel(graphics);
@@ -629,8 +628,8 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
     }
 
     @Override
-    protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
-    }
+    protected void renderLabels(PoseStack poseStack, int mouseX, int mouseY) {
+        GuiGraphics graphics = GuiGraphics.of(poseStack);    }
 
     private void renderBuyGrid(GuiGraphics graphics, int mouseX, int mouseY) {
         int first = this.scrollRow * GRID_COLS;
@@ -813,7 +812,7 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
 
     private void playClick() {
         if (this.minecraft != null) {
-            this.minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK.value(), 1.0f, 0.35f));
+            this.minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f, 0.35f));
         }
     }
 

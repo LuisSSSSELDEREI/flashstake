@@ -40,8 +40,6 @@ import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.item.crafting.AbstractCookingRecipe;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.world.item.crafting.SmithingRecipe;
-import net.minecraft.world.item.crafting.SmithingTrimRecipe;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -483,19 +481,8 @@ public final class ItemValues {
         for (Recipe recipe : level.getRecipeManager().getRecipes()) {
             List<List<Item>> groups;
             ItemStack result;
-            if (recipe.isSpecial() || recipe instanceof SmithingTrimRecipe || (result = ItemValues.resultOf(recipe, access)).isEmpty() || result.getCount() <= 0) continue;
-            if (recipe instanceof SmithingRecipe) {
-                SmithingRecipe smithing = (SmithingRecipe)recipe;
-                if (allStacks == null) {
-                    allStacks = new ArrayList<ItemStack>(allItems.size());
-                    for (Item item : allItems) {
-                        allStacks.add(new ItemStack((ItemLike)item));
-                    }
-                }
-                groups = ItemValues.smithingOptions(smithing, allItems, allStacks);
-            } else {
-                groups = ItemValues.craftingOptions(recipe);
-            }
+            if (recipe.isSpecial() || (result = ItemValues.resultOf(recipe, access)).isEmpty() || result.getCount() <= 0) continue;
+            groups = ItemValues.craftingOptions(recipe);
             if (groups == null || groups.isEmpty()) continue;
             normalized.add(new PricedRecipe(result.getItem(), result.getCount(), groups));
         }
@@ -521,26 +508,10 @@ public final class ItemValues {
     }
 
     @Nullable
-    private static List<List<Item>> smithingOptions(SmithingRecipe recipe, List<Item> allItems, List<ItemStack> allStacks) {
-        ArrayList<Item> base = new ArrayList<Item>();
-        ArrayList<Item> addition = new ArrayList<Item>();
-        for (int i = 0; i < allItems.size(); ++i) {
-            ItemStack stack = allStacks.get(i);
-            if (recipe.isBaseIngredient(stack)) {
-                base.add(allItems.get(i));
-            }
-            if (!recipe.isAdditionIngredient(stack)) continue;
-            addition.add(allItems.get(i));
-        }
-        if (base.isEmpty() || addition.isEmpty()) {
-            return null;
-        }
-        return List.of(base, addition);
-    }
 
     private static ItemStack resultOf(Recipe<?> recipe, RegistryAccess access) {
         try {
-            return recipe.getResultItem(access);
+            return recipe.getResultItem();
         }
         catch (Exception e) {
             return ItemStack.EMPTY;

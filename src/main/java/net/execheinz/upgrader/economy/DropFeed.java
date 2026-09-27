@@ -24,7 +24,7 @@ public final class DropFeed {
                 continue;
             }
             CaseDefinition.CaseTier tier = tierOf(def, stack);
-            long value = Math.round(ItemValues.stackValue(opener.level(), stack));
+            long value = Math.round(ItemValues.stackValue(opener.getLevel(), stack));
             boolean notable = tier == CaseDefinition.CaseTier.RARE
                 || tier == CaseDefinition.CaseTier.LEGENDARY
                 || value >= MIN_VALUE;

@@ -77,7 +77,7 @@ public final class CasePending {
         }
         long total = 0L;
         for (ItemStack stack : stacks) {
-            total += Math.max(0L, Math.round(ItemValues.stackValue(player.level(), stack)));
+            total += Math.max(0L, Math.round(ItemValues.stackValue(player.getLevel(), stack)));
         }
         clear(player);
         if (total > 0L) {

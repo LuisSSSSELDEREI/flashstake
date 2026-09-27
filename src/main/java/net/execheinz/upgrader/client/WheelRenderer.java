@@ -7,7 +7,7 @@
  *  com.mojang.blaze3d.vertex.DefaultVertexFormat
  *  com.mojang.blaze3d.vertex.Tesselator
  *  com.mojang.blaze3d.vertex.VertexFormat$Mode
- *  net.minecraft.client.gui.GuiGraphics
+ *  net.execheinz.upgrader.client.GuiGraphics
  *  net.minecraft.client.renderer.GameRenderer
  *  org.joml.Matrix4f
  */
@@ -18,9 +18,9 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import net.minecraft.client.gui.GuiGraphics;
+import net.execheinz.upgrader.client.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
-import org.joml.Matrix4f;
+import com.mojang.math.Matrix4f;
 
 public final class WheelRenderer {
     public static void arc(GuiGraphics graphics, float cx, float cy, float innerRadius, float outerRadius, float startDeg, float sweepDeg, int argb) {

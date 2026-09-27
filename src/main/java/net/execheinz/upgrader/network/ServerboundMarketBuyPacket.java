@@ -53,7 +53,7 @@ public record ServerboundMarketBuyPacket(String itemId, int count) {
             }
             int amount = Math.min(want, Math.min(available, hardCap));
 
-            long unit = Math.round(ItemValues.unitValue(player.level(), item) * Config.marketBuyRate);
+            long unit = Math.round(ItemValues.unitValue(player.getLevel(), item) * Config.marketBuyRate);
             long cost = unit * (long) amount;
             if (cost <= 0L || !PlayerBalance.trySpend(player, cost)) {
                 player.sendSystemMessage(Component.translatable("gui.flashstake.market.cannot_afford"));

@@ -145,7 +145,7 @@ public final class CaseStash {
         if (stack.isEmpty()) {
             return 0L;
         }
-        long value = Math.max(0L, Math.round(ItemValues.stackValue(player.level(), stack)));
+        long value = Math.max(0L, Math.round(ItemValues.stackValue(player.getLevel(), stack)));
         slots.set(slot, ItemStack.EMPTY);
         set(player, slots);
         if (value > 0L) {
@@ -155,7 +155,7 @@ public final class CaseStash {
     }
 
     public static long sellAll(ServerPlayer player) {
-        Level level = player.level();
+        Level level = player.getLevel();
         List<ItemStack> slots = get(player);
         long total = 0L;
         for (int i = 0; i < SLOTS; ++i) {
@@ -175,7 +175,7 @@ public final class CaseStash {
 
     public static long totalValue(Player player) {
         long total = 0L;
-        Level level = player.level();
+        Level level = player.getLevel();
         for (ItemStack stack : get(player)) {
             if (!stack.isEmpty()) {
                 total += Math.max(0L, Math.round(ItemValues.stackValue(level, stack)));

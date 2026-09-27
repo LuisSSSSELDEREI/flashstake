@@ -1,8 +1,10 @@
 package net.execheinz.upgrader.client;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.execheinz.upgrader.client.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
@@ -16,7 +18,7 @@ public class StyledButton extends Button {
     private final int neon;
 
     public StyledButton(int x, int y, int width, int height, Component message, int border, int top, int bottom, int textColor, int chevronColor, int neon, Button.OnPress onPress) {
-        super(x, y, width, height, message, onPress, DEFAULT_NARRATION);
+        super(x, y, width, height, message, onPress);
         this.border = border;
         this.top = top;
         this.bottom = bottom;
@@ -41,10 +43,11 @@ public class StyledButton extends Button {
     }
 
     @Override
-    protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        boolean lit = this.active && this.isHovered();
-        int x1 = this.getX();
-        int y1 = this.getY();
+    public void renderButton(PoseStack pose, int mouseX, int mouseY, float partialTick) {
+        GuiGraphics graphics = GuiGraphics.of(pose);
+        boolean lit = this.active && this.isHovered;
+        int x1 = this.x;
+        int y1 = this.y;
         int x2 = x1 + this.width;
         int y2 = y1 + this.height;
 

@@ -1,5 +1,7 @@
 package net.execheinz.upgrader.client;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+
 import java.util.List;
 import java.util.Locale;
 import net.execheinz.upgrader.doublegame.DoubleColor;
@@ -9,7 +11,7 @@ import net.execheinz.upgrader.network.ClientboundDoubleStatePacket;
 import net.execheinz.upgrader.network.ModNetwork;
 import net.execheinz.upgrader.network.ServerboundDoubleBetPacket;
 import net.execheinz.upgrader.network.ServerboundOpenUpgraderPacket;
-import net.minecraft.client.gui.GuiGraphics;
+import net.execheinz.upgrader.client.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
@@ -149,18 +151,18 @@ public class DoubleScreen extends AbstractContainerScreen<DoubleMenu> {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(graphics);
-        super.render(graphics, mouseX, mouseY, partialTick);
+    public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
+        GuiGraphics graphics = GuiGraphics.of(poseStack);        this.renderBackground(poseStack);
+        super.render(graphics.pose(), mouseX, mouseY, partialTick);
         graphics.drawCenteredString(this.font,
             Component.translatable("gui.flashstake.market.balance", format(MarketScreen.getClientBalance())),
             this.leftPos + this.imageWidth - 56, this.topPos + 10, UiTheme.NEON_GOLD);
-        this.renderTooltip(graphics, mouseX, mouseY);
+        this.renderTooltip(graphics.pose(), mouseX, mouseY);
     }
 
     @Override
-    protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
-        int x = this.leftPos;
+    protected void renderBg(PoseStack poseStack, float partialTick, int mouseX, int mouseY) {
+        GuiGraphics graphics = GuiGraphics.of(poseStack);        int x = this.leftPos;
         int y = this.topPos;
         WheelRenderer.neonPanel(graphics, x, y, x + this.imageWidth, y + this.imageHeight, 8, UiTheme.NEON_GOLD);
         graphics.drawCenteredString(this.font, Component.translatable("gui.flashstake.double.title"),
@@ -218,7 +220,7 @@ public class DoubleScreen extends AbstractContainerScreen<DoubleMenu> {
         for (int i = 0; i < 4; ++i) {
             if (DoubleColor.values()[i] == this.selected) {
                 StyledButton btn = this.colorButtons[i];
-                graphics.fill(btn.getX() - 1, btn.getY() - 1, btn.getX() + btn.getWidth() + 1, btn.getY() + btn.getHeight() + 1, 0x88FFFFFF);
+                graphics.fill(btn.x - 1, btn.y - 1, btn.x + btn.getWidth() + 1, btn.y + btn.getHeight() + 1, 0x88FFFFFF);
             }
         }
     }
@@ -287,8 +289,8 @@ public class DoubleScreen extends AbstractContainerScreen<DoubleMenu> {
     }
 
     @Override
-    protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
-    }
+    protected void renderLabels(PoseStack poseStack, int mouseX, int mouseY) {
+        GuiGraphics graphics = GuiGraphics.of(poseStack);    }
 
     private static String format(long value) {
         if (value >= 1_000_000L) {

@@ -207,7 +207,7 @@ public record CaseDefinition(String id, String nameKey, int color, long price, L
             e(Items.NETHER_BRICK, 24, CaseTier.JUNK), e(Items.GOLD_INGOT, 6, CaseTier.JUNK), e(Items.QUARTZ, 24, CaseTier.JUNK),
             e(Items.QUARTZ_BLOCK, 8, CaseTier.COMMON), e(Items.GOLD_BLOCK, CaseTier.COMMON), e(Items.DIAMOND, 2, CaseTier.COMMON),
             e(Items.NETHERITE_SCRAP, CaseTier.UNCOMMON), e(Items.ANCIENT_DEBRIS, CaseTier.UNCOMMON), e(Items.DIAMOND_BLOCK, CaseTier.UNCOMMON),
-            e(Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE, CaseTier.RARE), e(Items.TOTEM_OF_UNDYING, CaseTier.RARE),
+            e(Items.TOTEM_OF_UNDYING, CaseTier.RARE),
             e(Items.NETHERITE_INGOT, CaseTier.LEGENDARY), e(Items.NETHERITE_SWORD, CaseTier.LEGENDARY)),
 
         // ~500–800 / ~1200–1500 / ~2500–3600 / ~4800+ / ~5500–7000

@@ -38,7 +38,7 @@ public record ServerboundOpenCasePacket(String caseId, int count, boolean fast) 
             if (!PlayerBalance.trySpend(player, cost)) {
                 return;
             }
-            List<ItemStack> rewards = CaseLoot.rollMany(player.level(), def, player.getRandom(), n);
+            List<ItemStack> rewards = CaseLoot.rollMany(player.getLevel(), def, player.getRandom(), n);
             // Auto-keep previous undecided loot, then hold the new drop for Keep/Sell
             net.execheinz.upgrader.economy.CasePending.autoKeepIfAny(player);
             net.execheinz.upgrader.economy.CasePending.set(player, rewards);

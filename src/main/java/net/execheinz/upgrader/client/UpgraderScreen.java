@@ -3,7 +3,7 @@
  * 
  * Could not load the following classes:
  *  net.minecraft.ChatFormatting
- *  net.minecraft.client.gui.GuiGraphics
+ *  net.execheinz.upgrader.client.GuiGraphics
  *  net.minecraft.client.gui.components.EditBox
  *  net.minecraft.client.gui.components.events.GuiEventListener
  *  net.minecraft.client.gui.screens.inventory.AbstractContainerScreen
@@ -26,6 +26,8 @@
  */
 package net.execheinz.upgrader.client;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -45,9 +47,8 @@ import net.execheinz.upgrader.network.ServerboundStartUpgradePacket;
 import net.execheinz.upgrader.value.ItemValues;
 import net.execheinz.upgrader.value.UpgradeOdds;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
+import net.execheinz.upgrader.client.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -67,7 +68,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.registries.ForgeRegistries;
-import com.mojang.math.Axis;
+import com.mojang.math.Vector3f;
 
 public class UpgraderScreen
 extends AbstractContainerScreen<UpgraderMenu> {
@@ -168,7 +169,6 @@ extends AbstractContainerScreen<UpgraderMenu> {
         this.upgradeButton = StyledButton.gold(x + 12, y + ROW_Y, 100, ROW_H, Component.translatable("gui.flashstake.upgrade"), b -> ModNetwork.sendToServer(new ServerboundStartUpgradePacket(false)));
         this.addRenderableWidget(this.upgradeButton);
         this.fastUpgradeButton = StyledButton.neon(x + 116, y + ROW_Y, 22, ROW_H, Component.literal("\u26A1"), UiTheme.NEON_GOLD, b -> ModNetwork.sendToServer(new ServerboundStartUpgradePacket(true)));
-        this.fastUpgradeButton.setTooltip(Tooltip.create(Component.translatable("gui.flashstake.fast_upgrade")));
         this.addRenderableWidget(this.fastUpgradeButton);
         // Nav — flush top-left corner (title sits below, above the wheel)
         this.marketButton = StyledButton.neon(x + 3, y + 1, 38, 11, Component.translatable("gui.flashstake.market"), UiTheme.NEON_GOLD, b -> ModNetwork.sendToServer(new ServerboundOpenMarketPacket()));
@@ -198,14 +198,12 @@ extends AbstractContainerScreen<UpgraderMenu> {
         this.searchBox = new EditBox(this.font, x + 16, y + 26, 118, 16, Component.translatable("gui.flashstake.search"));
         this.searchBox.setMaxLength(64);
         this.searchBox.setTextColor(UiTheme.TEXT);
-        this.searchBox.setHint(Component.translatable("gui.flashstake.search").withStyle(ChatFormatting.DARK_GRAY));
         this.searchBox.setResponder(text -> {
             this.scrollRow = 0;
             this.refilter();
         });
         this.minPriceBox = new EditBox(this.font, x + 140, y + 26, 36, 16, Component.literal("min"));
         this.minPriceBox.setMaxLength(10);
-        this.minPriceBox.setHint(Component.translatable("gui.flashstake.market.min"));
         this.minPriceBox.setTextColor(UiTheme.NEON_LIME);
         this.minPriceBox.setResponder(t -> {
             this.scrollRow = 0;
@@ -213,7 +211,6 @@ extends AbstractContainerScreen<UpgraderMenu> {
         });
         this.maxPriceBox = new EditBox(this.font, x + 180, y + 26, 36, 16, Component.literal("max"));
         this.maxPriceBox.setMaxLength(10);
-        this.maxPriceBox.setHint(Component.translatable("gui.flashstake.market.max"));
         this.maxPriceBox.setTextColor(UiTheme.NEON_MAGENTA);
         this.maxPriceBox.setResponder(t -> {
             this.scrollRow = 0;
@@ -253,8 +250,8 @@ extends AbstractContainerScreen<UpgraderMenu> {
         if (this.chanceLockButton == null) {
             return;
         }
-        int x = this.chanceLockButton.getX();
-        int y = this.chanceLockButton.getY();
+        int x = this.chanceLockButton.x;
+        int y = this.chanceLockButton.y;
         this.removeWidget(this.chanceLockButton);
         this.chanceLockButton = StyledButton.neon(x, y, 18, ROW_H, this.lockLabel(), this.lockColor(), b -> this.toggleAutoPreferredChance());
         this.addRenderableWidget(this.chanceLockButton);
@@ -266,7 +263,7 @@ extends AbstractContainerScreen<UpgraderMenu> {
         if (this.autoPreferredChance) {
             this.applyPreferredChance();
         }
-        this.playUi(SoundEvents.UI_BUTTON_CLICK.value(), 1.0f);
+        this.playUi(SoundEvents.UI_BUTTON_CLICK, 1.0f);
     }
 
     private void adjustPreferredChance(double delta) {
@@ -355,7 +352,7 @@ extends AbstractContainerScreen<UpgraderMenu> {
             } else {
                 int interval = progress < 0.55f ? 2 : (progress < 0.85f ? 4 : 7);
                 if (this.spinTicks % interval == 0) {
-                    this.playUi(SoundEvents.NOTE_BLOCK_HAT.value(), 1.7f);
+                    this.playUi(SoundEvents.NOTE_BLOCK_HAT, 1.7f);
                 }
                 ++this.spinTicks;
             }
@@ -385,8 +382,8 @@ extends AbstractContainerScreen<UpgraderMenu> {
         return this.spinning || this.resultFlashUntil > System.currentTimeMillis() ? this.spinChance : this.chance;
     }
 
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        boolean ready;
+    public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
+        GuiGraphics graphics = GuiGraphics.of(poseStack);        boolean ready;
         boolean bl = ready = !this.spinning && !this.pickerOpen;
         UpgraderMenu menu = this.menu;
         if (this.upgradeButton != null) {
@@ -434,8 +431,8 @@ extends AbstractContainerScreen<UpgraderMenu> {
             this.plusButton.active = qtyReady && menu.getTargetCount() < menu.getTarget().getMaxStackSize();
             this.plusButton.visible = !this.pickerOpen && menu.getTarget() != null;
         }
-        this.renderBackground(graphics);
-        super.render(graphics, mouseX, mouseY, partialTick);
+        this.renderBackground(poseStack);
+        super.render(graphics.pose(), mouseX, mouseY, partialTick);
         if (this.pickerOpen) {
             this.renderPicker(graphics, mouseX, mouseY, partialTick);
         } else {
@@ -443,8 +440,8 @@ extends AbstractContainerScreen<UpgraderMenu> {
         }
     }
 
-    protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
-        int x = this.leftPos;
+    protected void renderBg(PoseStack poseStack, float partialTick, int mouseX, int mouseY) {
+        GuiGraphics graphics = GuiGraphics.of(poseStack);        int x = this.leftPos;
         int y = this.topPos;
         WheelRenderer.neonPanel(graphics, x, y, x + WIDTH, y + HEIGHT, 8, UiTheme.NEON_CYAN);
         this.renderCard(graphics, x + CARD_L_X1, y + CARD_Y1, UiTheme.NEON_BLUE);
@@ -533,7 +530,7 @@ extends AbstractContainerScreen<UpgraderMenu> {
         try {
             graphics.pose().translate(px, py, 50.0f);
             // Texture tip ≈ top-left; +135° → tip points inward (down at angle 0)
-            graphics.pose().mulPose(Axis.ZP.rotationDegrees(angleDeg + 135.0f));
+            graphics.pose().mulPose(Vector3f.ZP.rotationDegrees(angleDeg + 135.0f));
             graphics.pose().scale(1.15f, 1.15f, 1.0f);
             graphics.renderItem(NEEDLE_SWORD, -8, -8);
             graphics.flush();
@@ -553,8 +550,8 @@ extends AbstractContainerScreen<UpgraderMenu> {
         }
     }
 
-    protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
-        // Title centered above the upgrade wheel, clear of nav buttons
+    protected void renderLabels(PoseStack poseStack, int mouseX, int mouseY) {
+        GuiGraphics graphics = GuiGraphics.of(poseStack);        // Title centered above the upgrade wheel, clear of nav buttons
         graphics.pose().pushPose();
         graphics.pose().translate(WHEEL_CX, 18.0f, 0.0f);
         graphics.pose().scale(1.25f, 1.25f, 1.0f);
@@ -569,9 +566,9 @@ extends AbstractContainerScreen<UpgraderMenu> {
         }
     }
 
-    protected void renderTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
-        if (!this.pickerOpen) {
-            super.renderTooltip(graphics, mouseX, mouseY);
+    protected void renderTooltip(PoseStack poseStack, int mouseX, int mouseY) {
+        GuiGraphics graphics = GuiGraphics.of(poseStack);        if (!this.pickerOpen) {
+            super.renderTooltip(poseStack, mouseX, mouseY);
         }
     }
 
@@ -587,9 +584,9 @@ extends AbstractContainerScreen<UpgraderMenu> {
         graphics.pose().pushPose();
         graphics.pose().translate(0.0f, 0.0f, 300.0f);
         WheelRenderer.neonPanel(graphics, this.leftPos + PICKER_X1, this.topPos + PICKER_Y1, this.leftPos + PICKER_X2, this.topPos + PICKER_Y2, 6, UiTheme.NEON_PURPLE);
-        this.searchBox.render(graphics, mouseX, mouseY, partialTick);
-        this.minPriceBox.render(graphics, mouseX, mouseY, partialTick);
-        this.maxPriceBox.render(graphics, mouseX, mouseY, partialTick);
+        this.searchBox.render(graphics.pose(), mouseX, mouseY, partialTick);
+        this.minPriceBox.render(graphics.pose(), mouseX, mouseY, partialTick);
+        this.maxPriceBox.render(graphics.pose(), mouseX, mouseY, partialTick);
         graphics.drawString(this.font, Component.translatable("gui.flashstake.market.filters"),
             this.leftPos + 140, this.topPos + 48, TEXT_DIM, false);
         int first = this.scrollRow * GRID_COLS;
@@ -642,9 +639,6 @@ extends AbstractContainerScreen<UpgraderMenu> {
         this.searchBox.setValue("");
         this.minPriceBox.setValue("");
         this.maxPriceBox.setValue("");
-        this.searchBox.setFocused(true);
-        this.minPriceBox.setFocused(false);
-        this.maxPriceBox.setFocused(false);
         if (this.pickerSortButton != null) {
             this.pickerSortButton.visible = true;
         }
@@ -654,9 +648,6 @@ extends AbstractContainerScreen<UpgraderMenu> {
     private void closePicker() {
         this.pickerOpen = false;
         this.scrollDragging = false;
-        this.searchBox.setFocused(false);
-        this.minPriceBox.setFocused(false);
-        this.maxPriceBox.setFocused(false);
         if (this.pickerSortButton != null) {
             this.pickerSortButton.visible = false;
         }
@@ -785,7 +776,7 @@ extends AbstractContainerScreen<UpgraderMenu> {
         }
         if (best != null) {
             ModNetwork.sendToServer(ServerboundSetTargetPacket.of(best, 1));
-            this.playUi(SoundEvents.UI_BUTTON_CLICK.value(), 1.0f);
+            this.playUi(SoundEvents.UI_BUTTON_CLICK, 1.0f);
         }
     }
 
@@ -800,38 +791,26 @@ extends AbstractContainerScreen<UpgraderMenu> {
             return;
         }
         ModNetwork.sendToServer(ServerboundSetTargetPacket.of(target, next));
-        this.playUi(SoundEvents.UI_BUTTON_CLICK.value(), 1.0f);
+        this.playUi(SoundEvents.UI_BUTTON_CLICK, 1.0f);
     }
 
     private void selectTarget(Item item, int count) {
         ModNetwork.sendToServer(ServerboundSetTargetPacket.of(item, count));
-        this.playUi(SoundEvents.UI_BUTTON_CLICK.value(), 1.0f);
+        this.playUi(SoundEvents.UI_BUTTON_CLICK, 1.0f);
     }
 
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (this.pickerOpen) {
             int index;
             if (this.searchBox.mouseClicked(mouseX, mouseY, button)) {
-                this.searchBox.setFocused(true);
-                this.minPriceBox.setFocused(false);
-                this.maxPriceBox.setFocused(false);
                 return true;
             }
             if (this.minPriceBox.mouseClicked(mouseX, mouseY, button)) {
-                this.minPriceBox.setFocused(true);
-                this.searchBox.setFocused(false);
-                this.maxPriceBox.setFocused(false);
                 return true;
             }
             if (this.maxPriceBox.mouseClicked(mouseX, mouseY, button)) {
-                this.maxPriceBox.setFocused(true);
-                this.searchBox.setFocused(false);
-                this.minPriceBox.setFocused(false);
                 return true;
             }
-            this.searchBox.setFocused(false);
-            this.minPriceBox.setFocused(false);
-            this.maxPriceBox.setFocused(false);
             int trackX = this.leftPos + SCROLL_X;
             int trackY = this.scrollTrackTop();
             int trackH = this.scrollTrackHeight();
@@ -860,7 +839,7 @@ extends AbstractContainerScreen<UpgraderMenu> {
             } else {
                 this.openPicker();
             }
-            this.playUi((SoundEvent)SoundEvents.UI_BUTTON_CLICK.value(), 1.0f);
+            this.playUi((SoundEvent)SoundEvents.UI_BUTTON_CLICK, 1.0f);
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);

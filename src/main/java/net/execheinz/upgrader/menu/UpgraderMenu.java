@@ -139,7 +139,7 @@ public class UpgraderMenu extends AbstractContainerMenu {
             return;
         }
         this.targetCount = clampCount(this.target, this.targetCount);
-        double chance = UpgradeOdds.chance(serverPlayer.level(), stack, this.target, this.targetCount);
+        double chance = UpgradeOdds.chance(serverPlayer.getLevel(), stack, this.target, this.targetCount);
         RandomSource random = serverPlayer.getRandom();
         this.pendingWin = random.nextDouble() < chance;
         this.spinTicksLeft = fast ? 18 : Config.spinTicks;
@@ -175,7 +175,7 @@ public class UpgraderMenu extends AbstractContainerMenu {
             }
         }
         if (this.player instanceof ServerPlayer serverPlayer) {
-            serverPlayer.level().playSound(
+            serverPlayer.getLevel().playSound(
                 null,
                 serverPlayer.blockPosition(),
                 this.pendingWin ? SoundEvents.PLAYER_LEVELUP : SoundEvents.ANVIL_LAND,
@@ -200,11 +200,11 @@ public class UpgraderMenu extends AbstractContainerMenu {
     private void syncToClient(ServerPlayer serverPlayer, boolean force) {
         ResourceLocation key = this.target == null ? null : ForgeRegistries.ITEMS.getKey(this.target);
         String targetId = key == null ? "" : key.toString();
-        long inputValue = Math.round(ItemValues.stackValue(serverPlayer.level(), this.getInputStack()));
+        long inputValue = Math.round(ItemValues.stackValue(serverPlayer.getLevel(), this.getInputStack()));
         int count = this.target == null ? 1 : clampCount(this.target, this.targetCount);
         long targetValue = this.target == null
             ? 0L
-            : Math.round(ItemValues.unitValue(serverPlayer.level(), this.target) * (double) count);
+            : Math.round(ItemValues.unitValue(serverPlayer.getLevel(), this.target) * (double) count);
         if (!force
             && targetId.equals(this.lastSyncedTargetId)
             && inputValue == this.lastSyncedInputValue

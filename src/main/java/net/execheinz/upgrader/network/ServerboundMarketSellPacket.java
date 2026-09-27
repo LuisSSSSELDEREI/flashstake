@@ -37,7 +37,7 @@ public record ServerboundMarketSellPacket() {
                 MarketStock.get(player.server).syncTo(player);
                 return;
             }
-            long value = menu.sellTotalValue(player.level());
+            long value = menu.sellTotalValue(player.getLevel());
             if (value <= 0L) {
                 return;
             }

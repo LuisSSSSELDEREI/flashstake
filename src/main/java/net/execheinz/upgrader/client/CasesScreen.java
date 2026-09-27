@@ -1,5 +1,7 @@
 package net.execheinz.upgrader.client;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,7 +21,7 @@ import net.execheinz.upgrader.network.ServerboundOpenCasePacket;
 import net.execheinz.upgrader.network.ServerboundOpenUpgraderPacket;
 import net.execheinz.upgrader.value.ItemValues;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
+import net.execheinz.upgrader.client.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
@@ -399,7 +401,7 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
         }
         if (anyCrossed && now - this.lastTickSoundMs > 55L) {
             this.lastTickSoundMs = now;
-            this.play(SoundEvents.NOTE_BLOCK_HAT.value(), 1.8f, 0.25f);
+            this.play(SoundEvents.NOTE_BLOCK_HAT, 1.8f, 0.25f);
         }
         if (!this.spinning()) {
             this.updateWidgetStates();
@@ -410,8 +412,8 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
         switch (tier) {
             case LEGENDARY -> this.play(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 0.6f);
             case RARE -> this.play(SoundEvents.PLAYER_LEVELUP, 1.3f, 0.5f);
-            case UNCOMMON -> this.play(SoundEvents.NOTE_BLOCK_PLING.value(), 1.4f, 0.5f);
-            default -> this.play(SoundEvents.NOTE_BLOCK_BASS.value(), 1.0f, 0.4f);
+            case UNCOMMON -> this.play(SoundEvents.NOTE_BLOCK_PLING, 1.4f, 0.5f);
+            default -> this.play(SoundEvents.NOTE_BLOCK_BASS, 1.0f, 0.4f);
         }
     }
 
@@ -422,10 +424,10 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        this.updateWidgetStates();
-        this.renderBackground(graphics);
-        super.render(graphics, mouseX, mouseY, partialTick);
+    public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
+        GuiGraphics graphics = GuiGraphics.of(poseStack);        this.updateWidgetStates();
+        this.renderBackground(poseStack);
+        super.render(graphics.pose(), mouseX, mouseY, partialTick);
         graphics.drawCenteredString(this.font,
             Component.translatable("gui.flashstake.market.balance", format(MarketScreen.getClientBalance())),
             this.leftPos + this.imageWidth - 52, this.topPos + 10, UiTheme.NEON_GOLD);
@@ -435,7 +437,7 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
             case DETAIL -> this.renderCaseDetail(graphics, mouseX, mouseY);
             case STASH -> this.renderStash(graphics, mouseX, mouseY);
         }
-        this.renderTooltip(graphics, mouseX, mouseY);
+        this.renderTooltip(graphics.pose(), mouseX, mouseY);
     }
 
     private void renderDropFeed(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -473,8 +475,8 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
     }
 
     @Override
-    protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
-        WheelRenderer.neonPanel(graphics, this.leftPos, this.topPos, this.leftPos + this.imageWidth, this.topPos + this.imageHeight, 8, UiTheme.NEON_MAGENTA);
+    protected void renderBg(PoseStack poseStack, float partialTick, int mouseX, int mouseY) {
+        GuiGraphics graphics = GuiGraphics.of(poseStack);        WheelRenderer.neonPanel(graphics, this.leftPos, this.topPos, this.leftPos + this.imageWidth, this.topPos + this.imageHeight, 8, UiTheme.NEON_MAGENTA);
         if (this.mode != Mode.CASES) {
             return;
         }
@@ -501,8 +503,8 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
     }
 
     @Override
-    protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
-    }
+    protected void renderLabels(PoseStack poseStack, int mouseX, int mouseY) {
+        GuiGraphics graphics = GuiGraphics.of(poseStack);    }
 
     private void renderCaseGrid(GuiGraphics graphics, int mouseX, int mouseY) {
         List<CaseDefinition> cases = CaseDefinition.all();
@@ -825,7 +827,7 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
         if (this.mode == Mode.CASES) {
             if (inBox(mx, my, this.leftPos + 8, this.topPos + 244, 162, 18)) {
                 this.setMode(Mode.STASH);
-                this.play(SoundEvents.UI_BUTTON_CLICK.value(), 1.0f, 0.35f);
+                this.play(SoundEvents.UI_BUTTON_CLICK, 1.0f, 0.35f);
                 return true;
             }
             List<CaseDefinition> cases = CaseDefinition.all();
@@ -850,7 +852,7 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
                 this.reels.clear();
                 this.mode = Mode.DETAIL;
                 this.updateWidgetStates();
-                this.play(SoundEvents.UI_BUTTON_CLICK.value(), 1.0f, 0.35f);
+                this.play(SoundEvents.UI_BUTTON_CLICK, 1.0f, 0.35f);
                 return true;
             }
         } else if (this.mode == Mode.DETAIL && !this.reels.isEmpty()
@@ -874,7 +876,7 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
                         ? ServerboundCaseStashActionPacket.Action.WITHDRAW_ONE
                         : ServerboundCaseStashActionPacket.Action.SELL_ONE;
                     ModNetwork.sendToServer(new ServerboundCaseStashActionPacket(action, i));
-                    this.play(SoundEvents.UI_BUTTON_CLICK.value(), 1.0f, 0.4f);
+                    this.play(SoundEvents.UI_BUTTON_CLICK, 1.0f, 0.4f);
                 }
                 return true;
             }
