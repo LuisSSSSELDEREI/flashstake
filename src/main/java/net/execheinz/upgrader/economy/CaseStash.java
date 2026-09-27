@@ -5,6 +5,7 @@ import java.util.List;
 import net.execheinz.upgrader.network.ClientboundCaseStashPacket;
 import net.execheinz.upgrader.network.ModNetwork;
 import net.execheinz.upgrader.value.ItemValues;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -30,9 +31,10 @@ public final class CaseStash {
             return out;
         }
         ListTag list = data.getList(KEY, Tag.TAG_COMPOUND);
+        HolderLookup.Provider lookup = player.registryAccess();
         for (int i = 0; i < SLOTS; ++i) {
             if (i < list.size()) {
-                out.add(ItemStack.of(list.getCompound(i)));
+                out.add(ItemStack.parseOptional(lookup, list.getCompound(i)));
             } else {
                 out.add(ItemStack.EMPTY);
             }
@@ -42,13 +44,15 @@ public final class CaseStash {
 
     public static void set(ServerPlayer player, List<ItemStack> stacks) {
         ListTag list = new ListTag();
+        HolderLookup.Provider lookup = player.registryAccess();
         for (int i = 0; i < SLOTS; ++i) {
             ItemStack stack = i < stacks.size() ? stacks.get(i) : ItemStack.EMPTY;
-            CompoundTag tag = new CompoundTag();
-            if (!stack.isEmpty()) {
-                stack.copy().save(tag);
+            if (stack.isEmpty()) {
+                list.add(new CompoundTag());
+            } else {
+                Tag saved = stack.copy().save(lookup);
+                list.add(saved instanceof CompoundTag tag ? tag : new CompoundTag());
             }
-            list.add(tag);
         }
         player.getPersistentData().put(KEY, list);
         sync(player);
@@ -65,7 +69,7 @@ public final class CaseStash {
             if (slot.isEmpty()) {
                 continue;
             }
-            if (!ItemStack.isSameItemSameTags(slot, remaining)) {
+            if (!ItemStack.isSameItemSameComponents(slot, remaining)) {
                 continue;
             }
             int space = Math.min(slot.getMaxStackSize() - slot.getCount(), remaining.getCount());

@@ -5,6 +5,7 @@ import java.util.List;
 import net.execheinz.upgrader.network.ClientboundCasePendingPacket;
 import net.execheinz.upgrader.network.ModNetwork;
 import net.execheinz.upgrader.value.ItemValues;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -25,8 +26,9 @@ public final class CasePending {
             return out;
         }
         ListTag list = data.getList(KEY, Tag.TAG_COMPOUND);
+        HolderLookup.Provider lookup = player.registryAccess();
         for (int i = 0; i < list.size(); ++i) {
-            ItemStack stack = ItemStack.of(list.getCompound(i));
+            ItemStack stack = ItemStack.parseOptional(lookup, list.getCompound(i));
             if (!stack.isEmpty()) {
                 out.add(stack);
             }
@@ -36,13 +38,15 @@ public final class CasePending {
 
     public static void set(ServerPlayer player, List<ItemStack> stacks) {
         ListTag list = new ListTag();
+        HolderLookup.Provider lookup = player.registryAccess();
         for (ItemStack stack : stacks) {
             if (stack.isEmpty()) {
                 continue;
             }
-            CompoundTag tag = new CompoundTag();
-            stack.copy().save(tag);
-            list.add(tag);
+            Tag saved = stack.copy().save(lookup);
+            if (saved instanceof CompoundTag tag) {
+                list.add(tag);
+            }
         }
         if (list.isEmpty()) {
             player.getPersistentData().remove(KEY);

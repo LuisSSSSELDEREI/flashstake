@@ -11,7 +11,7 @@ import net.minecraftforge.network.SimpleChannel;
 public final class ModNetwork {
     private static final int PROTOCOL = 11;
     public static final SimpleChannel CHANNEL = ChannelBuilder
-        .named(new ResourceLocation("flashstake", "main"))
+        .named(ResourceLocation.fromNamespaceAndPath("flashstake", "main"))
         .networkProtocolVersion(PROTOCOL)
         .acceptedVersions(Channel.VersionTest.exact(PROTOCOL))
         .simpleChannel();

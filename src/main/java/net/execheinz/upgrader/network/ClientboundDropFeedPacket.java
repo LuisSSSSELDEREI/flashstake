@@ -18,7 +18,7 @@ public record ClientboundDropFeedPacket(List<Entry> entries) {
         for (Entry e : this.entries) {
             buf.writeUtf(e.playerName(), 32);
             buf.writeUtf(e.caseId(), 64);
-            buf.writeItem(e.stack());
+            buf.writeJsonWithCodec(ItemStack.OPTIONAL_CODEC, e.stack());
             buf.writeVarLong(e.value());
             buf.writeVarInt(e.tierOrdinal());
         }
@@ -28,7 +28,7 @@ public record ClientboundDropFeedPacket(List<Entry> entries) {
         int n = buf.readVarInt();
         ArrayList<Entry> entries = new ArrayList<>(n);
         for (int i = 0; i < n; ++i) {
-            entries.add(new Entry(buf.readUtf(32), buf.readUtf(64), buf.readItem(), buf.readVarLong(), buf.readVarInt()));
+            entries.add(new Entry(buf.readUtf(32), buf.readUtf(64), buf.readJsonWithCodec(ItemStack.OPTIONAL_CODEC), buf.readVarLong(), buf.readVarInt()));
         }
         return new ClientboundDropFeedPacket(entries);
     }

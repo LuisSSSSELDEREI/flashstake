@@ -15,7 +15,7 @@ public record ClientboundCaseResultPacket(String caseId, boolean fast, List<Item
         buf.writeBoolean(this.fast);
         buf.writeVarInt(this.rewards.size());
         for (ItemStack stack : this.rewards) {
-            buf.writeItem(stack);
+            buf.writeJsonWithCodec(ItemStack.OPTIONAL_CODEC, stack);
         }
     }
 
@@ -25,7 +25,7 @@ public record ClientboundCaseResultPacket(String caseId, boolean fast, List<Item
         int n = buf.readVarInt();
         ArrayList<ItemStack> rewards = new ArrayList<>(n);
         for (int i = 0; i < n; ++i) {
-            rewards.add(buf.readItem());
+            rewards.add(buf.readJsonWithCodec(ItemStack.OPTIONAL_CODEC));
         }
         return new ClientboundCaseResultPacket(id, fast, rewards);
     }

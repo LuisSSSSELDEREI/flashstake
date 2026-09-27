@@ -7,6 +7,7 @@ import net.execheinz.upgrader.Config;
 import net.execheinz.upgrader.network.ClientboundMarketStatePacket;
 import net.execheinz.upgrader.network.ModNetwork;
 import net.execheinz.upgrader.value.ItemValues;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -38,7 +39,7 @@ public final class MarketStock extends SavedData {
         return overworld.getDataStorage().computeIfAbsent(FACTORY, DATA_NAME);
     }
 
-    public static MarketStock load(CompoundTag tag) {
+    public static MarketStock load(CompoundTag tag, HolderLookup.Provider provider) {
         MarketStock data = new MarketStock();
         data.nextRefreshMs = tag.getLong("NextRefresh");
         CompoundTag stocks = tag.getCompound("Stock");
@@ -49,7 +50,7 @@ public final class MarketStock extends SavedData {
     }
 
     @Override
-    public CompoundTag save(CompoundTag tag) {
+    public CompoundTag save(CompoundTag tag, HolderLookup.Provider provider) {
         tag.putLong("NextRefresh", this.nextRefreshMs);
         CompoundTag stocks = new CompoundTag();
         for (Map.Entry<String, Integer> e : this.stock.entrySet()) {

@@ -15,7 +15,9 @@ package net.execheinz.upgrader.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.gui.GuiGraphics;
@@ -44,7 +46,7 @@ public final class WheelRenderer {
             WheelRenderer.vertex(buffer, matrix, cx + sin * outerRadius, cy - cos * outerRadius, color);
             WheelRenderer.vertex(buffer, matrix, cx + sin * innerRadius, cy - cos * innerRadius, color);
         }
-        WheelRenderer.end();
+        WheelRenderer.end(buffer);
     }
 
     public static void disc(GuiGraphics graphics, float cx, float cy, float radius, int argb) {
@@ -70,7 +72,7 @@ public final class WheelRenderer {
             WheelRenderer.vertex(buffer, matrix, cx + sin * inner - px, cy - cos * inner - py, color);
             WheelRenderer.vertex(buffer, matrix, cx + sin * outer - px, cy - cos * outer - py, color);
         }
-        WheelRenderer.end();
+        WheelRenderer.end(buffer);
     }
 
     public static void pointer(GuiGraphics graphics, float cx, float cy, float tipRadius, float baseRadius, float angleDeg, float halfWidth, int argb) {
@@ -93,7 +95,7 @@ public final class WheelRenderer {
         WheelRenderer.vertex(buffer, matrix, x2, y2, argb);
         WheelRenderer.vertex(buffer, matrix, x3, y3, argb);
         WheelRenderer.vertex(buffer, matrix, x3, y3, argb);
-        WheelRenderer.end();
+        WheelRenderer.end(buffer);
     }
 
     public static void hexGrid(GuiGraphics graphics, int x1, int y1, int x2, int y2, float size, int argb) {
@@ -115,7 +117,7 @@ public final class WheelRenderer {
                 }
             }
         }
-        WheelRenderer.end();
+        WheelRenderer.end(buffer);
         graphics.disableScissor();
     }
 
@@ -195,13 +197,14 @@ public final class WheelRenderer {
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableCull();
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        BufferBuilder buffer = Tesselator.getInstance().getBuilder();
-        buffer.begin(mode, DefaultVertexFormat.POSITION_COLOR);
-        return buffer;
+        return Tesselator.getInstance().begin(mode, DefaultVertexFormat.POSITION_COLOR);
     }
 
-    private static void end() {
-        Tesselator.getInstance().end();
+    private static void end(BufferBuilder buffer) {
+        MeshData mesh = buffer.build();
+        if (mesh != null) {
+            BufferUploader.drawWithShader(mesh);
+        }
         RenderSystem.enableCull();
         RenderSystem.disableBlend();
     }
@@ -222,7 +225,7 @@ public final class WheelRenderer {
     }
 
     private static void vertex(BufferBuilder buffer, Matrix4f matrix, float x, float y, int argb) {
-        buffer.vertex(matrix, x, y, 0.0f).color(argb >> 16 & 0xFF, argb >> 8 & 0xFF, argb & 0xFF, argb >>> 24).endVertex();
+        buffer.addVertex(matrix, x, y, 0.0f).setColor(argb >> 16 & 0xFF, argb >> 8 & 0xFF, argb & 0xFF, argb >>> 24);
     }
 
     private WheelRenderer() {

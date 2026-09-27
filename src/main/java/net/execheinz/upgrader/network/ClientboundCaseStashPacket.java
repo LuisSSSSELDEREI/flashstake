@@ -13,7 +13,7 @@ public record ClientboundCaseStashPacket(List<ItemStack> slots) {
     public void encode(FriendlyByteBuf buf) {
         buf.writeVarInt(this.slots.size());
         for (ItemStack stack : this.slots) {
-            buf.writeItem(stack);
+            buf.writeJsonWithCodec(ItemStack.OPTIONAL_CODEC, stack);
         }
     }
 
@@ -21,7 +21,7 @@ public record ClientboundCaseStashPacket(List<ItemStack> slots) {
         int n = buf.readVarInt();
         ArrayList<ItemStack> slots = new ArrayList<>(n);
         for (int i = 0; i < n; ++i) {
-            slots.add(buf.readItem());
+            slots.add(buf.readJsonWithCodec(ItemStack.OPTIONAL_CODEC));
         }
         return new ClientboundCaseStashPacket(slots);
     }

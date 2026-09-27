@@ -48,7 +48,7 @@ public record CaseDefinition(String id, String nameKey, int color, long price, L
     }
 
     public net.minecraft.resources.ResourceLocation icon() {
-        return new net.minecraft.resources.ResourceLocation("flashstake", "textures/gui/cases/" + this.imageName() + ".png");
+        return net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("flashstake", "textures/gui/cases/" + this.imageName() + ".png");
     }
 
     public static List<CaseDefinition> all() {

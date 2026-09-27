@@ -213,7 +213,7 @@ public final class BaseValues {
             Items.MUSIC_DISC_OTHERSIDE, Items.MUSIC_DISC_5, Items.MUSIC_DISC_PIGSTEP, Items.MUSIC_DISC_RELIC
         );
         BaseValues.put(40.0, Items.DRAGON_BREATH);
-        BaseValues.put(25.0, Items.SCUTE);
+        BaseValues.put(25.0, Items.TURTLE_SCUTE);
         BaseValues.put(125.0, Items.TURTLE_HELMET);
         BaseValues.put(1500.0, Items.TOTEM_OF_UNDYING, Items.TRIDENT);
         BaseValues.put(2500.0, Items.ENCHANTED_GOLDEN_APPLE);

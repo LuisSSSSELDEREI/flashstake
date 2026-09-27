@@ -39,7 +39,7 @@ public record ServerboundMarketBuyPacket(String itemId, int count) {
                 return;
             }
             int want = Math.max(1, this.count);
-            int hardCap = Math.max(item.getMaxStackSize(), item.getMaxStackSize() * 27);
+            int hardCap = Math.max(item.getDefaultMaxStackSize(), item.getDefaultMaxStackSize() * 27);
 
             MarketStock market = MarketStock.get(player.server);
             market.ensureReady(player.server);
@@ -66,7 +66,7 @@ public record ServerboundMarketBuyPacket(String itemId, int count) {
 
             int left = amount;
             while (left > 0) {
-                int slice = Math.min(left, item.getMaxStackSize());
+                int slice = Math.min(left, item.getDefaultMaxStackSize());
                 ItemStack stack = new ItemStack(item, slice);
                 if (!player.getInventory().add(stack)) {
                     player.drop(stack, false);

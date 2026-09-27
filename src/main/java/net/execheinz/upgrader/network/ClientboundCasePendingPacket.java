@@ -13,7 +13,7 @@ public record ClientboundCasePendingPacket(List<ItemStack> stacks) {
     public void encode(FriendlyByteBuf buf) {
         buf.writeVarInt(this.stacks.size());
         for (ItemStack stack : this.stacks) {
-            buf.writeItem(stack);
+            buf.writeJsonWithCodec(ItemStack.OPTIONAL_CODEC, stack);
         }
     }
 
@@ -21,7 +21,7 @@ public record ClientboundCasePendingPacket(List<ItemStack> stacks) {
         int n = buf.readVarInt();
         ArrayList<ItemStack> stacks = new ArrayList<>(n);
         for (int i = 0; i < n; ++i) {
-            stacks.add(buf.readItem());
+            stacks.add(buf.readJsonWithCodec(ItemStack.OPTIONAL_CODEC));
         }
         return new ClientboundCasePendingPacket(stacks);
     }

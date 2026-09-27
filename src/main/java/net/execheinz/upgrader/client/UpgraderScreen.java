@@ -422,7 +422,7 @@ extends AbstractContainerScreen<UpgraderMenu> {
             this.minusButton.visible = !this.pickerOpen && menu.getTarget() != null;
         }
         if (this.plusButton != null) {
-            this.plusButton.active = qtyReady && menu.getTargetCount() < menu.getTarget().getMaxStackSize();
+            this.plusButton.active = qtyReady && menu.getTargetCount() < menu.getTarget().getDefaultMaxStackSize();
             this.plusButton.visible = !this.pickerOpen && menu.getTarget() != null;
         }
         this.renderBackground(graphics, mouseX, mouseY, partialTick);

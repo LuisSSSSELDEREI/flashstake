@@ -123,7 +123,7 @@ public class UpgraderMenu extends AbstractContainerMenu {
         if (item == null) {
             return 1;
         }
-        int max = Math.max(1, item.getMaxStackSize());
+        int max = Math.max(1, item.getDefaultMaxStackSize());
         return Mth.clamp(count, 1, max);
     }
 
