@@ -1,5 +1,5 @@
 modLoader="javafml"
-loaderVersion="[52,)"
+loaderVersion="[54,)"
 license="All Rights Reserved"
 
 [[mods]]
@@ -12,13 +12,13 @@ description='''Апгрейд предметов, маркет, кейсы и д
 [[dependencies.flashstake]]
     modId="forge"
     mandatory=true
-    versionRange="[52,)"
+    versionRange="[54,)"
     ordering="NONE"
     side="BOTH"
 
 [[dependencies.flashstake]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.21.1,1.21.2)"
+    versionRange="[1.21.4,1.21.5)"
     ordering="NONE"
     side="BOTH"

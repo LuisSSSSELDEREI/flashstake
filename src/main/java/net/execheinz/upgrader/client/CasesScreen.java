@@ -21,6 +21,7 @@ import net.execheinz.upgrader.value.ItemValues;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -573,7 +574,7 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
         int u = (int) Math.round(maxU * (0.5 - Math.max(-1.0, Math.min(1.0, biasX)) * 0.5));
         u = Math.max(0, Math.min(maxU, u));
         int v = maxV / 2;
-        graphics.blit(icon, x, y, w, h, u, v, srcW, srcH, texW, texH);
+        graphics.blit(RenderType::guiTextured, icon, x, y, (float) u, (float) v, w, h, srcW, srcH, texW, texH);
         return true;
     }
 

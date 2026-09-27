@@ -29,8 +29,10 @@ import java.util.Set;
 import javax.annotation.Nullable;
 import net.execheinz.upgrader.Config;
 import net.execheinz.upgrader.value.BaseValues;
+import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -38,11 +40,14 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.item.crafting.AbstractCookingRecipe;
+import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.world.item.crafting.SmithingRecipe;
-import net.minecraft.world.item.crafting.SmithingTrimRecipe;
-import net.minecraft.world.level.ItemLike;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.RecipeManager;
+import net.minecraft.world.item.crafting.SingleItemRecipe;
+import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.registries.ForgeRegistries;
 
@@ -430,7 +435,7 @@ public final class ItemValues {
     @Nullable
     private static Double cheapTagValue(Item item) {
         var holder = item.builtInRegistryHolder();
-        if (holder.is(ItemTags.LEAVES) || holder.is(ItemTags.FLOWERS) || holder.is(ItemTags.SAPLINGS)) {
+        if (holder.is(ItemTags.LEAVES) || holder.is(ItemTags.SMALL_FLOWERS) || holder.is(ItemTags.SAPLINGS)) {
             return MIN_UNIT;
         }
         if (holder.is(ItemTags.DIRT) || holder.is(ItemTags.SAND)) {
@@ -439,14 +444,24 @@ public final class ItemValues {
         return null;
     }
 
+    @Nullable
+    private static RecipeManager recipeManager(Level level) {
+        MinecraftServer server = level.getServer();
+        return server == null ? null : server.getRecipeManager();
+    }
+
     private static void applyCookingInputs(Level level, Map<Item, Double> table, Set<Item> pinned) {
+        RecipeManager manager = ItemValues.recipeManager(level);
+        if (manager == null) {
+            return;
+        }
         RegistryAccess access = level.registryAccess();
-        for (var holder : level.getRecipeManager().getRecipes()) {
+        for (RecipeHolder<?> holder : manager.getRecipes()) {
             Recipe<?> recipe = holder.value();
-            if (!(recipe instanceof AbstractCookingRecipe)) {
+            if (!(recipe instanceof AbstractCookingRecipe cooking)) {
                 continue;
             }
-            ItemStack result = ItemValues.resultOf(recipe, access);
+            ItemStack result = ItemValues.resultOf(cooking, access);
             if (result.isEmpty()) {
                 continue;
             }
@@ -455,50 +470,43 @@ public final class ItemValues {
                 continue;
             }
             double value = resultValue * (double) result.getCount();
-            for (Ingredient ingredient : recipe.getIngredients()) {
-                if (ingredient.isEmpty()) {
+            Ingredient ingredient = cooking.input();
+            if (ingredient.isEmpty()) {
+                continue;
+            }
+            for (Holder<Item> itemHolder : ingredient.items().toList()) {
+                Item input = itemHolder.value();
+                if (pinned.contains(input)) {
                     continue;
                 }
-                for (ItemStack stack : ingredient.getItems()) {
-                    if (stack.isEmpty()) {
-                        continue;
-                    }
-                    Item input = stack.getItem();
-                    if (pinned.contains(input)) {
-                        continue;
-                    }
-                    Double current = table.get(input);
-                    if (current == null || value > current) {
-                        table.put(input, value);
-                    }
+                Double current = table.get(input);
+                if (current == null || value > current) {
+                    table.put(input, value);
                 }
             }
         }
     }
 
     private static List<PricedRecipe> normalize(Level level) {
+        RecipeManager manager = ItemValues.recipeManager(level);
+        if (manager == null) {
+            return List.of();
+        }
         RegistryAccess access = level.registryAccess();
-        ArrayList<PricedRecipe> normalized = new ArrayList<PricedRecipe>();
-        ArrayList<Item> allItems = new ArrayList<Item>(ForgeRegistries.ITEMS.getValues());
-        ArrayList<ItemStack> allStacks = null;
-        for (var holder : level.getRecipeManager().getRecipes()) {
-            Recipe recipe = holder.value();
-            List<List<Item>> groups;
-            ItemStack result;
-            if (recipe.isSpecial() || recipe instanceof SmithingTrimRecipe || (result = ItemValues.resultOf(recipe, access)).isEmpty() || result.getCount() <= 0) continue;
-            if (recipe instanceof SmithingRecipe) {
-                SmithingRecipe smithing = (SmithingRecipe)recipe;
-                if (allStacks == null) {
-                    allStacks = new ArrayList<ItemStack>(allItems.size());
-                    for (Item item : allItems) {
-                        allStacks.add(new ItemStack((ItemLike)item));
-                    }
-                }
-                groups = ItemValues.smithingOptions(smithing, allItems, allStacks);
-            } else {
-                groups = ItemValues.craftingOptions(recipe);
+        ArrayList<PricedRecipe> normalized = new ArrayList<>();
+        for (RecipeHolder<?> holder : manager.getRecipes()) {
+            Recipe<?> recipe = holder.value();
+            if (recipe.isSpecial()) {
+                continue;
             }
-            if (groups == null || groups.isEmpty()) continue;
+            ItemStack result = ItemValues.resultOf(recipe, access);
+            if (result.isEmpty() || result.getCount() <= 0) {
+                continue;
+            }
+            List<List<Item>> groups = ItemValues.craftingOptions(recipe);
+            if (groups == null || groups.isEmpty()) {
+                continue;
+            }
             normalized.add(new PricedRecipe(result.getItem(), result.getCount(), groups));
         }
         return normalized;
@@ -506,13 +514,14 @@ public final class ItemValues {
 
     @Nullable
     private static List<List<Item>> craftingOptions(Recipe<?> recipe) {
-        ArrayList<List<Item>> groups = new ArrayList<List<Item>>();
-        for (Ingredient ingredient : recipe.getIngredients()) {
-            if (ingredient.isEmpty()) continue;
-            ArrayList<Item> group = new ArrayList<Item>();
-            for (ItemStack stack : ingredient.getItems()) {
-                if (stack.isEmpty()) continue;
-                group.add(stack.getItem());
+        ArrayList<List<Item>> groups = new ArrayList<>();
+        for (Ingredient ingredient : recipe.placementInfo().ingredients()) {
+            if (ingredient.isEmpty()) {
+                continue;
+            }
+            ArrayList<Item> group = new ArrayList<>();
+            for (Holder<Item> itemHolder : ingredient.items().toList()) {
+                group.add(itemHolder.value());
             }
             if (group.isEmpty()) {
                 return null;
@@ -522,29 +531,14 @@ public final class ItemValues {
         return groups;
     }
 
-    @Nullable
-    private static List<List<Item>> smithingOptions(SmithingRecipe recipe, List<Item> allItems, List<ItemStack> allStacks) {
-        ArrayList<Item> base = new ArrayList<Item>();
-        ArrayList<Item> addition = new ArrayList<Item>();
-        for (int i = 0; i < allItems.size(); ++i) {
-            ItemStack stack = allStacks.get(i);
-            if (recipe.isBaseIngredient(stack)) {
-                base.add(allItems.get(i));
-            }
-            if (!recipe.isAdditionIngredient(stack)) continue;
-            addition.add(allItems.get(i));
-        }
-        if (base.isEmpty() || addition.isEmpty()) {
-            return null;
-        }
-        return List.of(base, addition);
-    }
-
     private static ItemStack resultOf(Recipe<?> recipe, RegistryAccess access) {
         try {
-            return recipe.getResultItem(access);
-        }
-        catch (Exception e) {
+            if (recipe instanceof SingleItemRecipe single) {
+                return single.assemble(new SingleRecipeInput(ItemStack.EMPTY), access);
+            }
+            // Fallback: assemble may still return a result for many recipe types.
+            return recipe.assemble(null, access);
+        } catch (Exception e) {
             return ItemStack.EMPTY;
         }
     }

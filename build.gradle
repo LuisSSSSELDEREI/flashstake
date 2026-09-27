@@ -9,16 +9,15 @@ version = '1.1.0'
 group = 'net.execheinz.upgrader'
 
 base {
-    archivesName = 'flashstake-1.21.1'
+    archivesName = 'flashstake-1.21.4'
 }
 
-// Mojang ships Java 21 to end users in 1.20.5+, so your mod should target Java 21.
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 minecraft {
-    mappings channel: 'official', version: '1.21.1'
+    mappings channel: 'official', version: '1.21.4'
 
     runs {
         configureEach {
@@ -42,7 +41,7 @@ repositories {
 }
 
 dependencies {
-    implementation minecraft.dependency('net.minecraftforge:forge:1.21.1-52.1.16')
+    implementation minecraft.dependency('net.minecraftforge:forge:1.21.4-54.1.18')
 }
 
 tasks.withType(JavaCompile).configureEach {
