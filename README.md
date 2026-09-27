@@ -1,6 +1,6 @@
 # FlashStake
 
-Мод экономики для **Minecraft Forge 1.20.1**: апгрейд предметов, маркет, кейсы и дабл.
+Мод экономики для Minecraft Forge: апгрейд предметов, маркет, кейсы и дабл.
 
 ## Возможности
 
@@ -13,32 +13,32 @@
 
 ## Версии Minecraft
 
-Сейчас поддерживается только **1.20.1 (Forge)**.
+Каждая версия Minecraft — **отдельная ветка** и отдельный jar. Один jar не работает на нескольких MC.
 
-План на другие версии:
+| MC | Ветка | Release | Jar | Java |
+|---|---|---|---|---|
+| **1.20.1** | [`main`](https://github.com/LuisSSSSELDEREI/flashstake/tree/main) | [v1.1.0-1.20.1](https://github.com/LuisSSSSELDEREI/flashstake/releases/tag/v1.1.0-1.20.1) | `flashstake-1.20.1-1.1.0.jar` | 17 |
+| **1.20.4** | [`1.20.4`](https://github.com/LuisSSSSELDEREI/flashstake/tree/1.20.4) | [v1.1.0-1.20.4](https://github.com/LuisSSSSELDEREI/flashstake/releases/tag/v1.1.0-1.20.4) | `flashstake-1.20.4-1.1.0.jar` | 17 |
+| **1.21.1** | [`1.21.1`](https://github.com/LuisSSSSELDEREI/flashstake/tree/1.21.1) | [v1.1.0-1.21.1](https://github.com/LuisSSSSELDEREI/flashstake/releases/tag/v1.1.0-1.21.1) | `flashstake-1.21.1-1.1.0.jar` | 21 |
+| **1.19.2** | [`1.19.2`](https://github.com/LuisSSSSELDEREI/flashstake/tree/1.19.2) | [v1.1.0-1.19.2](https://github.com/LuisSSSSELDEREI/flashstake/releases/tag/v1.1.0-1.19.2) | `flashstake-1.19.2-1.1.0.jar` | 17 |
+| **1.21.4** | [`1.21.4`](https://github.com/LuisSSSSELDEREI/flashstake/tree/1.21.4) | [v1.1.0-1.21.4](https://github.com/LuisSSSSELDEREI/flashstake/releases/tag/v1.1.0-1.21.4) | `flashstake-1.21.4-1.1.0.jar` | 21 |
 
-| Ветка / релиз | MC | Статус |
-|---|---|---|
-| `main` | 1.20.1 Forge | актуальная |
-| `1.21.1` (позже) | 1.21.1 Forge | порт отдельно |
-| … | … | по одной версии |
-
-Каждая новая версия игры — **отдельная ветка** и отдельный jar в GitHub Releases  
-(например `flashstake-1.20.1-1.1.0.jar`). Код не смешиваем в одном билде.
+Все релизы: https://github.com/LuisSSSSELDEREI/flashstake/releases
 
 ## Сборка
 
-Требуется **JDK 17**.
+- Ветки `main` / `1.20.4` / `1.19.2` — **JDK 17**
+- Ветки `1.21.1` / `1.21.4` — **JDK 21**
 
 ```bat
 gradlew.bat build
 ```
 
-Готовый jar: `build/libs/flashstake-<version>.jar`
+Готовый jar: `build/libs/flashstake-<mc>-<mod>.jar`
 
 ## Установка
 
-Положить jar в папку `mods` клиента и сервера (Forge той же версии, что у jar).
+Положить jar в папку `mods` клиента и сервера (Forge той же версии Minecraft, что указана в имени jar).
 
 ## Авторы
 
