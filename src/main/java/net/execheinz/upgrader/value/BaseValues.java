@@ -43,7 +43,7 @@ public final class BaseValues {
         BaseValues.put(4.0, Items.GRANITE, Items.DIORITE, Items.ANDESITE, Items.BLACKSTONE);
         // Very cheap / freely farmable foliage & filler (floor = 1)
         BaseValues.put(1.0,
-            Items.GRASS, Items.FERN, Items.SEAGRASS, Items.TALL_GRASS, Items.LARGE_FERN,
+            Items.SHORT_GRASS, Items.FERN, Items.SEAGRASS, Items.TALL_GRASS, Items.LARGE_FERN,
             Items.VINE, Items.GLOW_LICHEN, Items.HANGING_ROOTS, Items.MOSS_CARPET, Items.PINK_PETALS,
             Items.LILY_PAD, Items.SUGAR_CANE, Items.BAMBOO
         );

@@ -1,6 +1,5 @@
 package net.execheinz.upgrader.network;
 
-import java.util.function.Supplier;
 import net.execheinz.upgrader.Config;
 import net.execheinz.upgrader.economy.MarketSellQuota;
 import net.execheinz.upgrader.economy.MarketStock;
@@ -9,7 +8,7 @@ import net.execheinz.upgrader.menu.MarketMenu;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 /** Confirm sale of everything currently in the market sell tray. */
 public record ServerboundMarketSellPacket() {
@@ -20,8 +19,7 @@ public record ServerboundMarketSellPacket() {
         return new ServerboundMarketSellPacket();
     }
 
-    public void handle(Supplier<NetworkEvent.Context> context) {
-        NetworkEvent.Context ctx = context.get();
+    public void handle(CustomPayloadEvent.Context ctx) {
         ctx.enqueueWork(() -> {
             ServerPlayer player = ctx.getSender();
             if (player == null || !(player.containerMenu instanceof MarketMenu menu)) {

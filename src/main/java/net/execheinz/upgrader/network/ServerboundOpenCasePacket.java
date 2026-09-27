@@ -2,14 +2,13 @@ package net.execheinz.upgrader.network;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 import net.execheinz.upgrader.cases.CaseDefinition;
 import net.execheinz.upgrader.cases.CaseLoot;
 import net.execheinz.upgrader.economy.PlayerBalance;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 public record ServerboundOpenCasePacket(String caseId, int count, boolean fast) {
     public void encode(FriendlyByteBuf buf) {
@@ -22,8 +21,7 @@ public record ServerboundOpenCasePacket(String caseId, int count, boolean fast) 
         return new ServerboundOpenCasePacket(buf.readUtf(64), buf.readVarInt(), buf.readBoolean());
     }
 
-    public void handle(Supplier<NetworkEvent.Context> context) {
-        NetworkEvent.Context ctx = context.get();
+    public void handle(CustomPayloadEvent.Context ctx) {
         ctx.enqueueWork(() -> {
             ServerPlayer player = ctx.getSender();
             if (player == null) {

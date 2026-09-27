@@ -336,15 +336,6 @@ extends AbstractContainerScreen<UpgraderMenu> {
 
     protected void containerTick() {
         super.containerTick();
-        if (this.searchBox != null) {
-            this.searchBox.tick();
-        }
-        if (this.minPriceBox != null) {
-            this.minPriceBox.tick();
-        }
-        if (this.maxPriceBox != null) {
-            this.maxPriceBox.tick();
-        }
         if (this.spinning) {
             float progress = this.progress();
             if (progress >= 1.0f) {
@@ -434,7 +425,7 @@ extends AbstractContainerScreen<UpgraderMenu> {
             this.plusButton.active = qtyReady && menu.getTargetCount() < menu.getTarget().getMaxStackSize();
             this.plusButton.visible = !this.pickerOpen && menu.getTarget() != null;
         }
-        this.renderBackground(graphics);
+        this.renderBackground(graphics, mouseX, mouseY, partialTick);
         super.render(graphics, mouseX, mouseY, partialTick);
         if (this.pickerOpen) {
             this.renderPicker(graphics, mouseX, mouseY, partialTick);
@@ -882,17 +873,17 @@ extends AbstractContainerScreen<UpgraderMenu> {
         return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
     }
 
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         if (this.pickerOpen) {
-            this.scrollRow = Mth.clamp(this.scrollRow - (int) Math.signum(delta), 0, this.maxScrollRow());
+            this.scrollRow = Mth.clamp(this.scrollRow - (int) Math.signum(scrollY), 0, this.maxScrollRow());
             return true;
         }
         if (!this.spinning && this.menu.getTarget() != null
             && inBox((int) mouseX, (int) mouseY, this.leftPos + CARD_R_X1, this.topPos + CARD_Y1, CARD_W, CARD_Y2 - CARD_Y1)) {
-            this.adjustTargetCount(delta > 0 ? 1 : -1, hasShiftDown());
+            this.adjustTargetCount(scrollY > 0 ? 1 : -1, hasShiftDown());
             return true;
         }
-        return super.mouseScrolled(mouseX, mouseY, delta);
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {

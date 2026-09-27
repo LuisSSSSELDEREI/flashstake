@@ -1,11 +1,10 @@
 package net.execheinz.upgrader.network;
 
-import java.util.function.Supplier;
 import net.execheinz.upgrader.doublegame.DoubleColor;
 import net.execheinz.upgrader.doublegame.DoubleGame;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 public record ServerboundDoubleBetPacket(int colorOrdinal, long amount) {
     public void encode(FriendlyByteBuf buf) {
@@ -17,8 +16,7 @@ public record ServerboundDoubleBetPacket(int colorOrdinal, long amount) {
         return new ServerboundDoubleBetPacket(buf.readVarInt(), buf.readVarLong());
     }
 
-    public void handle(Supplier<NetworkEvent.Context> context) {
-        NetworkEvent.Context ctx = context.get();
+    public void handle(CustomPayloadEvent.Context ctx) {
         ctx.enqueueWork(() -> {
             ServerPlayer player = ctx.getSender();
             DoubleGame game = DoubleGame.get();

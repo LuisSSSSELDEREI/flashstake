@@ -1,13 +1,12 @@
 package net.execheinz.upgrader.network;
 
-import java.util.function.Supplier;
 import net.execheinz.upgrader.menu.UpgraderMenu;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.Item;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 import net.minecraftforge.registries.ForgeRegistries;
 
 public record ServerboundSetTargetPacket(String itemId, int count) {
@@ -29,8 +28,7 @@ public record ServerboundSetTargetPacket(String itemId, int count) {
         return new ServerboundSetTargetPacket(buf.readUtf(256), buf.readVarInt());
     }
 
-    public void handle(Supplier<NetworkEvent.Context> context) {
-        NetworkEvent.Context ctx = context.get();
+    public void handle(CustomPayloadEvent.Context ctx) {
         ctx.enqueueWork(() -> {
             ServerPlayer player = ctx.getSender();
             if (player == null) {

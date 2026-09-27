@@ -424,7 +424,7 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.updateWidgetStates();
-        this.renderBackground(graphics);
+        this.renderBackground(graphics, mouseX, mouseY, partialTick);
         super.render(graphics, mouseX, mouseY, partialTick);
         graphics.drawCenteredString(this.font,
             Component.translatable("gui.flashstake.market.balance", format(MarketScreen.getClientBalance())),

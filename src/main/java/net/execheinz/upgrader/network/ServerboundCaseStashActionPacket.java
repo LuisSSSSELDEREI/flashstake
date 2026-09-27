@@ -1,10 +1,9 @@
 package net.execheinz.upgrader.network;
 
-import java.util.function.Supplier;
 import net.execheinz.upgrader.economy.CaseStash;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 public record ServerboundCaseStashActionPacket(Action action, int slot) {
     public enum Action {
@@ -23,8 +22,7 @@ public record ServerboundCaseStashActionPacket(Action action, int slot) {
         return new ServerboundCaseStashActionPacket(buf.readEnum(Action.class), buf.readVarInt());
     }
 
-    public void handle(Supplier<NetworkEvent.Context> context) {
-        NetworkEvent.Context ctx = context.get();
+    public void handle(CustomPayloadEvent.Context ctx) {
         ctx.enqueueWork(() -> {
             ServerPlayer player = ctx.getSender();
             if (player == null) {

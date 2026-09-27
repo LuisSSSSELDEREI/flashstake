@@ -1,10 +1,9 @@
 package net.execheinz.upgrader.network;
 
-import java.util.function.Supplier;
 import net.execheinz.upgrader.economy.CasePending;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 public record ServerboundCasePendingActionPacket(Action action) {
     public enum Action {
@@ -20,8 +19,7 @@ public record ServerboundCasePendingActionPacket(Action action) {
         return new ServerboundCasePendingActionPacket(buf.readEnum(Action.class));
     }
 
-    public void handle(Supplier<NetworkEvent.Context> context) {
-        NetworkEvent.Context ctx = context.get();
+    public void handle(CustomPayloadEvent.Context ctx) {
         ctx.enqueueWork(() -> {
             ServerPlayer player = ctx.getSender();
             if (player == null) {

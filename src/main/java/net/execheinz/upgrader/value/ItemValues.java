@@ -441,7 +441,8 @@ public final class ItemValues {
 
     private static void applyCookingInputs(Level level, Map<Item, Double> table, Set<Item> pinned) {
         RegistryAccess access = level.registryAccess();
-        for (Recipe<?> recipe : level.getRecipeManager().getRecipes()) {
+        for (var holder : level.getRecipeManager().getRecipes()) {
+            Recipe<?> recipe = holder.value();
             if (!(recipe instanceof AbstractCookingRecipe)) {
                 continue;
             }
@@ -480,7 +481,8 @@ public final class ItemValues {
         ArrayList<PricedRecipe> normalized = new ArrayList<PricedRecipe>();
         ArrayList<Item> allItems = new ArrayList<Item>(ForgeRegistries.ITEMS.getValues());
         ArrayList<ItemStack> allStacks = null;
-        for (Recipe recipe : level.getRecipeManager().getRecipes()) {
+        for (var holder : level.getRecipeManager().getRecipes()) {
+            Recipe recipe = holder.value();
             List<List<Item>> groups;
             ItemStack result;
             if (recipe.isSpecial() || recipe instanceof SmithingTrimRecipe || (result = ItemValues.resultOf(recipe, access)).isEmpty() || result.getCount() <= 0) continue;

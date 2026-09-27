@@ -1,11 +1,10 @@
 package net.execheinz.upgrader.network;
 
-import java.util.function.Supplier;
 import net.execheinz.upgrader.client.ClientPacketHandler;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 public record ClientboundUpgraderSyncPacket(String targetId, long inputValue, long targetValue, float chance, int targetCount) {
     public void encode(FriendlyByteBuf buf) {
@@ -26,8 +25,7 @@ public record ClientboundUpgraderSyncPacket(String targetId, long inputValue, lo
         );
     }
 
-    public void handle(Supplier<NetworkEvent.Context> context) {
-        NetworkEvent.Context ctx = context.get();
+    public void handle(CustomPayloadEvent.Context ctx) {
         ctx.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ClientPacketHandler.handleSync(this)));
         ctx.setPacketHandled(true);
     }

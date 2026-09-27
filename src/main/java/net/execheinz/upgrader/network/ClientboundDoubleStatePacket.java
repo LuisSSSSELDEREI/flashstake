@@ -2,12 +2,11 @@ package net.execheinz.upgrader.network;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 import net.execheinz.upgrader.client.ClientPacketHandler;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 public record ClientboundDoubleStatePacket(
     long roundId,
@@ -55,8 +54,7 @@ public record ClientboundDoubleStatePacket(
         return new ClientboundDoubleStatePacket(roundId, phase, ticks, result, bets, history);
     }
 
-    public void handle(Supplier<NetworkEvent.Context> context) {
-        NetworkEvent.Context ctx = context.get();
+    public void handle(CustomPayloadEvent.Context ctx) {
         ctx.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ClientPacketHandler.handleDoubleState(this)));
         ctx.setPacketHandled(true);
     }

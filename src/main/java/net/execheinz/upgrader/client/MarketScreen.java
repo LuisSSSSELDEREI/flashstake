@@ -485,9 +485,6 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
     @Override
     protected void containerTick() {
         super.containerTick();
-        if (this.buyQtyBox != null) {
-            this.buyQtyBox.tick();
-        }
         if (this.buyPanelOpen()) {
             this.refreshBuyButtons();
         }
@@ -496,7 +493,7 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(graphics);
+        this.renderBackground(graphics, mouseX, mouseY, partialTick);
         super.render(graphics, mouseX, mouseY, partialTick);
         // Force buy qty controls above slots/panel so they stay clickable
         if (this.buyPanelOpen()) {
@@ -754,12 +751,12 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         if (this.buyMode && !this.buyPanelOpen()) {
-            this.scrollRow = Mth.clamp(this.scrollRow - (int) Math.signum(delta) * Math.max(1, (int) Math.abs(delta)), 0, this.maxScrollRow());
+            this.scrollRow = Mth.clamp(this.scrollRow - (int) Math.signum(scrollY) * Math.max(1, (int) Math.abs(scrollY)), 0, this.maxScrollRow());
             return true;
         }
-        return super.mouseScrolled(mouseX, mouseY, delta);
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 
     @Override

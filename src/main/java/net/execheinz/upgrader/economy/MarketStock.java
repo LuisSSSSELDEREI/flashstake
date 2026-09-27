@@ -12,6 +12,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -21,6 +22,8 @@ import net.minecraftforge.registries.ForgeRegistries;
  */
 public final class MarketStock extends SavedData {
     private static final String DATA_NAME = "flashstake_market_stock";
+    private static final SavedData.Factory<MarketStock> FACTORY =
+        new SavedData.Factory<>(MarketStock::new, MarketStock::load, DataFixTypes.LEVEL);
 
     private final Map<String, Integer> stock = new HashMap<>();
     private long nextRefreshMs;
@@ -32,7 +35,7 @@ public final class MarketStock extends SavedData {
 
     public static MarketStock get(MinecraftServer server) {
         ServerLevel overworld = server.overworld();
-        return overworld.getDataStorage().computeIfAbsent(MarketStock::load, MarketStock::new, DATA_NAME);
+        return overworld.getDataStorage().computeIfAbsent(FACTORY, DATA_NAME);
     }
 
     public static MarketStock load(CompoundTag tag) {

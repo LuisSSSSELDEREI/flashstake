@@ -1,6 +1,5 @@
 package net.execheinz.upgrader.network;
 
-import java.util.function.Supplier;
 import net.execheinz.upgrader.Config;
 import net.execheinz.upgrader.economy.MarketSellQuota;
 import net.execheinz.upgrader.economy.MarketStock;
@@ -12,7 +11,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 import net.minecraftforge.registries.ForgeRegistries;
 
 public record ServerboundMarketBuyPacket(String itemId, int count) {
@@ -25,8 +24,7 @@ public record ServerboundMarketBuyPacket(String itemId, int count) {
         return new ServerboundMarketBuyPacket(buf.readUtf(), buf.readVarInt());
     }
 
-    public void handle(Supplier<NetworkEvent.Context> context) {
-        NetworkEvent.Context ctx = context.get();
+    public void handle(CustomPayloadEvent.Context ctx) {
         ctx.enqueueWork(() -> {
             ServerPlayer player = ctx.getSender();
             if (player == null || this.itemId.isEmpty() || this.count <= 0) {
