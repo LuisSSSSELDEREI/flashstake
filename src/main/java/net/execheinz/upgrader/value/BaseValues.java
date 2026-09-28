@@ -163,6 +163,11 @@ public final class BaseValues {
         BaseValues.put(120.0, Items.RECOVERY_COMPASS);
         BaseValues.put(300.0, Items.HEART_OF_THE_SEA, Items.SPONGE);
         BaseValues.put(600.0, Items.SADDLE, Items.NAME_TAG);
+        // Horse armor is uncraftable (except leather) � without pins it falls to rarityFallback=1
+        BaseValues.put(80.0, Items.LEATHER_HORSE_ARMOR);
+        BaseValues.put(250.0, Items.IRON_HORSE_ARMOR);
+        BaseValues.put(400.0, Items.GOLDEN_HORSE_ARMOR);
+        BaseValues.put(1200.0, Items.DIAMOND_HORSE_ARMOR);
         // Template dupe: 1 template + diamond + mat → 2 templates ⇒ V ≤ diamond+mat ≈ 401
         BaseValues.put(400.0, Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE);
         BaseValues.put(50.0,
