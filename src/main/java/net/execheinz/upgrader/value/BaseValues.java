@@ -146,6 +146,9 @@ public final class BaseValues {
         BaseValues.put(50.0, Items.COPPER_ORE, Items.DEEPSLATE_COPPER_ORE);
         BaseValues.put(35.0, Items.RAW_IRON);
         BaseValues.put(40.0, Items.IRON_INGOT);
+        // Chest = 8 planks @2; hopper = 5 iron + chest (matches 1.20.1 craft graph)
+        BaseValues.put(16.0, Items.CHEST);
+        BaseValues.put(216.0, Items.HOPPER);
         // Empty bucket     3  iron; filled must be     empty or pour   sell prints
         BaseValues.put(120.0, Items.BUCKET);
         BaseValues.put(125.0,

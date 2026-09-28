@@ -28,11 +28,13 @@ import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nullable;
 import net.execheinz.upgrader.Config;
+import net.execheinz.upgrader.client.ClientRecipes;
 import net.execheinz.upgrader.value.BaseValues;
 import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -52,6 +54,8 @@ import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.world.item.crafting.display.RecipeDisplay;
 import net.minecraft.world.item.crafting.display.SlotDisplay;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.registries.ForgeRegistries;
 
 public final class ItemValues {
@@ -121,14 +125,22 @@ public final class ItemValues {
      */
     private static Map<Item, Double> table(Level level) {
         Map<Item, Double> local = values;
-        if (local != null) return local;
-        Class<ItemValues> clazz = ItemValues.class;
+        if (local != null) {
+            return local;
+        }
         synchronized (ItemValues.class) {
             local = values;
-            if (local != null) return local;
-            values = local = ItemValues.compute(level);
-            // ** MonitorExit[var2_2] (shouldn't be in output)
-            return local;
+            if (local != null) {
+                return local;
+            }
+            // 1.21.4 client worlds have no full recipe list. Wait until we can see recipes
+            // (integrated server) before caching — otherwise hopper/etc stay at rarity=1 forever.
+            RecipeManager recipes = ItemValues.recipeManager(level);
+            Map<Item, Double> computed = ItemValues.compute(level);
+            if (recipes != null) {
+                values = computed;
+            }
+            return computed;
         }
     }
 
@@ -449,8 +461,15 @@ public final class ItemValues {
 
     @Nullable
     private static RecipeManager recipeManager(Level level) {
+        if (level instanceof ServerLevel serverLevel) {
+            return serverLevel.getServer().getRecipeManager();
+        }
         MinecraftServer server = level.getServer();
-        return server == null ? null : server.getRecipeManager();
+        if (server != null) {
+            return server.getRecipeManager();
+        }
+        // Singleplayer client thread: pull from the local integrated server.
+        return DistExecutor.unsafeCallWhenOn(Dist.CLIENT, () -> ClientRecipes::tryGet);
     }
 
     private static void applyCookingInputs(Level level, Map<Item, Double> table, Set<Item> pinned) {

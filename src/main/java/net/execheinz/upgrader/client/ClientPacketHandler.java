@@ -44,6 +44,8 @@ public final class ClientPacketHandler {
     }
 
     public static void handleMarketState(ClientboundMarketStatePacket packet) {
+        // Refresh craft prices once the integrated server is up (1.21.4 client has no recipe list).
+        net.execheinz.upgrader.value.ItemValues.invalidate();
         MarketScreen.applyMarketState(packet);
     }
 
