@@ -41,13 +41,16 @@ import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.item.crafting.AbstractCookingRecipe;
 import net.minecraft.world.item.crafting.CraftingInput;
-import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
+import net.minecraft.world.item.crafting.ShapedRecipe;
+import net.minecraft.world.item.crafting.ShapelessRecipe;
 import net.minecraft.world.item.crafting.SingleItemRecipe;
 import net.minecraft.world.item.crafting.SingleRecipeInput;
+import net.minecraft.world.item.crafting.display.RecipeDisplay;
+import net.minecraft.world.item.crafting.display.SlotDisplay;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.registries.ForgeRegistries;
 
@@ -533,11 +536,30 @@ public final class ItemValues {
 
     private static ItemStack resultOf(Recipe<?> recipe, RegistryAccess access) {
         try {
+            // 1.21.4 removed getResultItem(); assemble(null) NPE'd and skipped almost all crafts
+            // (hopper etc. fell through to rarityFallback=1). Use typed assemble / display.
+            if (recipe instanceof ShapedRecipe shaped) {
+                return shaped.assemble(CraftingInput.EMPTY, access);
+            }
+            if (recipe instanceof ShapelessRecipe shapeless) {
+                return shapeless.assemble(CraftingInput.EMPTY, access);
+            }
             if (recipe instanceof SingleItemRecipe single) {
                 return single.assemble(new SingleRecipeInput(ItemStack.EMPTY), access);
             }
-            // Fallback: assemble may still return a result for many recipe types.
-            return recipe.assemble(null, access);
+            for (RecipeDisplay display : recipe.display()) {
+                SlotDisplay resultSlot = display.result();
+                if (resultSlot instanceof SlotDisplay.ItemStackSlotDisplay stackDisplay) {
+                    ItemStack stack = stackDisplay.stack();
+                    if (!stack.isEmpty()) {
+                        return stack.copy();
+                    }
+                }
+                if (resultSlot instanceof SlotDisplay.ItemSlotDisplay itemDisplay) {
+                    return new ItemStack(itemDisplay.item());
+                }
+            }
+            return ItemStack.EMPTY;
         } catch (Exception e) {
             return ItemStack.EMPTY;
         }
