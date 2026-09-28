@@ -125,6 +125,7 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
     @Override
     protected void init() {
         super.init();
+        UiCursor.scheduleRestore();
         int x = this.leftPos;
         int y = this.topPos;
         this.backButton = this.addRenderableWidget(StyledButton.chip(x + 8, y + 6, 50, 16,
@@ -183,6 +184,7 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
             return;
         }
         if (this.mode == Mode.CASES) {
+            UiCursor.captureIfInFlashStakeUi();
             ModNetwork.sendToServer(new ServerboundOpenUpgraderPacket());
         } else {
             this.setMode(Mode.CASES);
@@ -424,6 +426,7 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        UiCursor.tickInRender();
         this.updateWidgetStates();
         this.renderBackground(graphics, mouseX, mouseY, partialTick);
         super.render(graphics, mouseX, mouseY, partialTick);

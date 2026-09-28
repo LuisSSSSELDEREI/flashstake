@@ -143,7 +143,11 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
             }));
         this.backButton = this.addRenderableWidget(StyledButton.neon(x + this.imageWidth - 68, y + 4, 60, 16,
             Component.translatable("gui.flashstake.market.back"), UiTheme.NEON_CYAN,
-            b -> ModNetwork.sendToServer(new ServerboundOpenUpgraderPacket())));
+            b -> {
+                UiCursor.captureIfInFlashStakeUi();
+                ModNetwork.sendToServer(new ServerboundOpenUpgraderPacket());
+            }));
+        UiCursor.scheduleRestore();
 
         this.searchBox = new EditBox(this.font, x + 12, y + 36, 160, 16, Component.translatable("gui.flashstake.search"));
         this.searchBox.setMaxLength(64);
@@ -493,6 +497,7 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        UiCursor.tickInRender();
         this.renderBackground(graphics, mouseX, mouseY, partialTick);
         super.render(graphics, mouseX, mouseY, partialTick);
         // Force buy qty controls above slots/panel so they stay clickable

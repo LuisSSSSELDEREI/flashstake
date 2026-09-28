@@ -67,7 +67,11 @@ public class DoubleScreen extends AbstractContainerScreen<DoubleMenu> {
         int y = this.topPos;
         this.backButton = this.addRenderableWidget(StyledButton.chip(x + 8, y + 6, 50, 16,
             Component.translatable("gui.flashstake.market.back"), -1643790,
-            b -> ModNetwork.sendToServer(new ServerboundOpenUpgraderPacket())));
+            b -> {
+                UiCursor.captureIfInFlashStakeUi();
+                ModNetwork.sendToServer(new ServerboundOpenUpgraderPacket());
+            }));
+        UiCursor.scheduleRestore();
 
         DoubleColor[] colors = DoubleColor.values();
         for (int i = 0; i < 4; ++i) {
@@ -150,6 +154,7 @@ public class DoubleScreen extends AbstractContainerScreen<DoubleMenu> {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        UiCursor.tickInRender();
         this.renderBackground(graphics, mouseX, mouseY, partialTick);
         super.render(graphics, mouseX, mouseY, partialTick);
         graphics.drawCenteredString(this.font,

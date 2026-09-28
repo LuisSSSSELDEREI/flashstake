@@ -171,12 +171,22 @@ extends AbstractContainerScreen<UpgraderMenu> {
         this.fastUpgradeButton.setTooltip(Tooltip.create(Component.translatable("gui.flashstake.fast_upgrade")));
         this.addRenderableWidget(this.fastUpgradeButton);
         // Nav — flush top-left corner (title sits below, above the wheel)
-        this.marketButton = StyledButton.neon(x + 3, y + 1, 38, 11, Component.translatable("gui.flashstake.market"), UiTheme.NEON_GOLD, b -> ModNetwork.sendToServer(new ServerboundOpenMarketPacket()));
+        this.marketButton = StyledButton.neon(x + 3, y + 1, 38, 11, Component.translatable("gui.flashstake.market"), UiTheme.NEON_GOLD, b -> {
+            UiCursor.captureIfInFlashStakeUi();
+            ModNetwork.sendToServer(new ServerboundOpenMarketPacket());
+        });
         this.addRenderableWidget(this.marketButton);
-        this.casesButton = StyledButton.neon(x + 43, y + 1, 38, 11, Component.translatable("gui.flashstake.cases"), UiTheme.NEON_MAGENTA, b -> ModNetwork.sendToServer(new ServerboundOpenCasesPacket()));
+        this.casesButton = StyledButton.neon(x + 43, y + 1, 38, 11, Component.translatable("gui.flashstake.cases"), UiTheme.NEON_MAGENTA, b -> {
+            UiCursor.captureIfInFlashStakeUi();
+            ModNetwork.sendToServer(new ServerboundOpenCasesPacket());
+        });
         this.addRenderableWidget(this.casesButton);
-        this.doubleButton = StyledButton.neon(x + 83, y + 1, 38, 11, Component.translatable("gui.flashstake.double"), UiTheme.NEON_LIME, b -> ModNetwork.sendToServer(new ServerboundOpenDoublePacket()));
+        this.doubleButton = StyledButton.neon(x + 83, y + 1, 38, 11, Component.translatable("gui.flashstake.double"), UiTheme.NEON_LIME, b -> {
+            UiCursor.captureIfInFlashStakeUi();
+            ModNetwork.sendToServer(new ServerboundOpenDoublePacket());
+        });
         this.addRenderableWidget(this.doubleButton);
+        UiCursor.scheduleRestore();
         this.minusButton = StyledButton.neon(x + TARGET_X - 19, y + CARD_Y2 - 22, 18, 16, Component.literal("-"), UiTheme.NEON_CYAN, b -> this.adjustTargetCount(-1, hasShiftDown()));
         this.plusButton = StyledButton.neon(x + TARGET_X + 19, y + CARD_Y2 - 22, 18, 16, Component.literal("+"), UiTheme.NEON_CYAN, b -> this.adjustTargetCount(1, hasShiftDown()));
         this.addRenderableWidget(this.minusButton);
@@ -377,6 +387,7 @@ extends AbstractContainerScreen<UpgraderMenu> {
     }
 
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        UiCursor.tickInRender();
         boolean ready;
         boolean bl = ready = !this.spinning && !this.pickerOpen;
         UpgraderMenu menu = this.menu;
