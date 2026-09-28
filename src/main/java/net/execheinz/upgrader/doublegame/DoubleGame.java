@@ -26,7 +26,6 @@ public final class DoubleGame {
     public static final int RESULT_TICKS = 100;   // 5s — показ результата
     public static final int HISTORY_SIZE = 25;
     public static final long MIN_BET = 10L;
-    public static final long MAX_BET = 100_000L;
 
     private static DoubleGame INSTANCE;
 
@@ -126,7 +125,7 @@ public final class DoubleGame {
         if (this.phase != Phase.BETTING) {
             return false;
         }
-        if (amount < MIN_BET || amount > MAX_BET) {
+        if (amount < MIN_BET) {
             return false;
         }
         if (this.bets.containsKey(player.getUUID())) {
