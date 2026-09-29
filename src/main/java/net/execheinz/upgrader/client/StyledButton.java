@@ -5,14 +5,15 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.FormattedText;
 
+/**
+ * Clean neon buttons — readable labels, soft hover, clear disabled state.
+ */
 public class StyledButton extends Button {
     private final int border;
     private final int top;
     private final int bottom;
     private final int textColor;
-    private final int chevronColor;
     private final int neon;
 
     public StyledButton(int x, int y, int width, int height, Component message, int border, int top, int bottom, int textColor, int chevronColor, int neon, Button.OnPress onPress) {
@@ -21,13 +22,12 @@ public class StyledButton extends Button {
         this.top = top;
         this.bottom = bottom;
         this.textColor = textColor;
-        this.chevronColor = chevronColor;
         this.neon = neon;
     }
 
     public static StyledButton gold(int x, int y, int width, int height, Component message, Button.OnPress onPress) {
         return new StyledButton(x, y, width, height, message,
-            UiTheme.NEON_GOLD, 0xFF3A2A08, 0xFF1E1504, UiTheme.NEON_GOLD, UiTheme.NEON_GOLD, UiTheme.NEON_GOLD, onPress);
+            UiTheme.NEON_GOLD, 0xFF3A2A08, 0xFF1E1504, UiTheme.NEON_GOLD, 0, UiTheme.NEON_GOLD, onPress);
     }
 
     public static StyledButton chip(int x, int y, int width, int height, Component message, int textColor, Button.OnPress onPress) {
@@ -47,42 +47,77 @@ public class StyledButton extends Button {
         int y1 = this.getY();
         int x2 = x1 + this.width;
         int y2 = y1 + this.height;
+        int radius = Math.min(5, Math.max(3, this.height / 4));
 
         if (this.active && this.neon != 0) {
-            int glow = (this.neon & 0x00FFFFFF) | (lit ? 0x55000000 : 0x28000000);
-            WheelRenderer.roundedRect(graphics, x1 - 1, y1 - 1, x2 + 1, y2 + 1, 5, glow);
+            int glowA = lit ? 0x40 : 0x22;
+            int glow = (this.neon & 0x00FFFFFF) | (glowA << 24);
+            WheelRenderer.roundedRect(graphics, x1 - 1, y1 - 1, x2 + 1, y2 + 1, radius + 1, glow);
         }
 
-        int borderColor = this.active ? (lit ? WheelRenderer.lerpColor(this.border, -1, 0.35f) : this.border) : 0xFF2A3040;
-        int topColor = this.active ? (lit ? WheelRenderer.lerpColor(this.top, -1, 0.12f) : this.top) : 0xFF12151C;
-        int bottomColor = this.active ? (lit ? WheelRenderer.lerpColor(this.bottom, -1, 0.12f) : this.bottom) : 0xFF0A0C12;
-        WheelRenderer.card(graphics, x1, y1, x2, y2, 4, borderColor, topColor, bottomColor);
+        int borderColor;
+        int topColor;
+        int bottomColor;
+        if (!this.active) {
+            borderColor = 0xFF2A3040;
+            topColor = 0xFF141820;
+            bottomColor = 0xFF0C1018;
+        } else if (lit) {
+            borderColor = WheelRenderer.lerpColor(this.border, 0xFFFFFFFF, 0.28f);
+            topColor = WheelRenderer.lerpColor(this.top, 0xFFFFFFFF, 0.10f);
+            bottomColor = WheelRenderer.lerpColor(this.bottom, 0xFFFFFFFF, 0.06f);
+        } else {
+            borderColor = this.border;
+            topColor = this.top;
+            bottomColor = this.bottom;
+        }
+        WheelRenderer.card(graphics, x1, y1, x2, y2, radius, borderColor, topColor, bottomColor);
 
-        if (this.active && this.neon != 0) {
-            graphics.fill(x1 + 3, y1 + 1, x2 - 3, y1 + 2, (this.neon & 0x00FFFFFF) | 0x88000000);
+        // Soft top highlight
+        if (this.active) {
+            int hi = (this.neon != 0 ? this.neon : UiTheme.TEXT) & 0x00FFFFFF;
+            graphics.fill(x1 + 3, y1 + 1, x2 - 3, y1 + 2, hi | 0x55000000);
         }
 
         Font font = Minecraft.getInstance().font;
         int labelColor = this.active ? this.textColor : UiTheme.TEXT_MUTED;
-        int textWidth = font.width((FormattedText) this.getMessage());
-        boolean chevron = this.chevronColor != 0;
-        int groupWidth = textWidth + (chevron ? 12 : 0);
-        int groupX = x1 + (this.width - groupWidth) / 2;
-        // Font glyph height is 9 — center cleanly in the button
-        int textY = y1 + (this.height - 9) / 2;
-        int textX = chevron ? groupX + 12 : groupX;
-        if (chevron) {
-            drawChevron(graphics, groupX, textY + 1, this.active ? this.chevronColor : UiTheme.TEXT_MUTED);
+        int pad = 4;
+        String label = this.getMessage().getString();
+        int maxW = Math.max(4, this.width - pad * 2);
+        // Prefer full text: shrink slightly before ellipsizing
+        float scale = 1.0f;
+        if (font.width(label) > maxW) {
+            scale = Math.max(0.65f, maxW / (float) Math.max(1, font.width(label)));
         }
-        graphics.drawString(font, this.getMessage(), textX, textY, labelColor, false);
+        if (font.width(label) * scale > maxW + 0.5f) {
+            label = UiText.ellipsize(font, label, maxW);
+            scale = 1.0f;
+        }
+        int textWidth = Math.round(font.width(label) * scale);
+        int textX = x1 + (this.width - textWidth) / 2;
+        int textY = y1 + (this.height - Math.round(9 * scale)) / 2;
+        if (scale < 0.999f) {
+            graphics.pose().pushPose();
+            graphics.pose().translate(textX, textY, 0);
+            graphics.pose().scale(scale, scale, 1.0f);
+            if (this.active) {
+                graphics.drawString(font, label, 1, 1, 0x66000000, false);
+            }
+            graphics.drawString(font, label, 0, 0, labelColor, false);
+            graphics.pose().popPose();
+        } else {
+            if (this.active) {
+                graphics.drawString(font, label, textX + 1, textY + 1, 0x66000000, false);
+            }
+            graphics.drawString(font, label, textX, textY, labelColor, false);
+        }
     }
 
-    private static void drawChevron(GuiGraphics graphics, int x, int y, int color) {
-        for (int row = 0; row < 3; ++row) {
-            graphics.fill(x + 3 - row, y + row, x + 4 - row, y + row + 1, color);
-            graphics.fill(x + 3 + row, y + row, x + 4 + row, y + row + 1, color);
-            graphics.fill(x + 3 - row, y + row + 3, x + 4 - row, y + row + 4, color);
-            graphics.fill(x + 3 + row, y + row + 3, x + 4 + row, y + row + 4, color);
+    @Override
+    public void onPress() {
+        if (this.active) {
+            FlashFx.softClick();
         }
+        super.onPress();
     }
 }
