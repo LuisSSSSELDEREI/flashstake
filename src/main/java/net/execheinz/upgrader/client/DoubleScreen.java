@@ -9,6 +9,7 @@ import net.execheinz.upgrader.network.ClientboundDoubleStatePacket;
 import net.execheinz.upgrader.network.ModNetwork;
 import net.execheinz.upgrader.network.ServerboundDoubleBetPacket;
 import net.execheinz.upgrader.network.ServerboundOpenUpgraderPacket;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -23,6 +24,8 @@ public class DoubleScreen extends AbstractContainerScreen<DoubleMenu> {
     private static final int REEL_Y = 78;
     private static final int REEL_H = 48;
     private static final int REEL_W = 348;
+    private static final int HIST_CHIP = 14;
+    private static final int HIST_GAP = 2;
 
     private static long clientRoundId;
     private static int clientPhase;
@@ -60,20 +63,38 @@ public class DoubleScreen extends AbstractContainerScreen<DoubleMenu> {
         clientHistory = List.copyOf(packet.history());
     }
 
+    private boolean hasOwnBet() {
+        Minecraft mc = this.minecraft;
+        if (mc == null || mc.player == null) {
+            return false;
+        }
+        String name = mc.player.getGameProfile().getName();
+        for (ClientboundDoubleStatePacket.BetView bet : clientBets) {
+            if (name.equalsIgnoreCase(bet.playerName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     protected void init() {
         super.init();
         int x = this.leftPos;
         int y = this.topPos;
-        this.backButton = this.addRenderableWidget(StyledButton.chip(x + 8, y + 6, 50, 16,
-            Component.translatable("gui.flashstake.market.back"), -1643790,
-            b -> ModNetwork.sendToServer(new ServerboundOpenUpgraderPacket())));
+        this.backButton = this.addRenderableWidget(StyledButton.chip(x + 8, y + 6, 52, 18,
+            Component.translatable("gui.flashstake.market.back"), UiTheme.TEXT,
+            b -> {
+                UiCursor.captureIfInFlashStakeUi();
+                ModNetwork.sendToServer(new ServerboundOpenUpgraderPacket());
+            }));
+        UiCursor.scheduleRestore();
 
         DoubleColor[] colors = DoubleColor.values();
         for (int i = 0; i < 4; ++i) {
             DoubleColor color = colors[i];
             this.colorButtons[i] = this.addRenderableWidget(StyledButton.chip(
-                x + 16 + i * 88, y + 148, 82, 24,
+                x + 16 + i * 88, y + 148, 82, 26,
                 Component.translatable("gui.flashstake.double.color." + color.name().toLowerCase(Locale.ROOT), color.multiplier()),
                 color.argb(),
                 b -> this.selected = color
@@ -96,26 +117,44 @@ public class DoubleScreen extends AbstractContainerScreen<DoubleMenu> {
             ));
         }
 
-        this.betButton = this.addRenderableWidget(StyledButton.gold(x + 16, y + 208, 348, 22,
+        this.betButton = this.addRenderableWidget(StyledButton.gold(x + 16, y + 208, 348, 24,
             Component.translatable("gui.flashstake.double.bet"), b -> this.sendBet()));
 
         this.lastRoundSeen = clientRoundId;
         if (clientPhase == DoubleGame.Phase.SPINNING.ordinal()) {
             this.startSpinVisual();
         }
+        this.refreshBetControls();
     }
 
     private void sendBet() {
+        if (this.hasOwnBet() || clientPhase != DoubleGame.Phase.BETTING.ordinal()) {
+            return;
+        }
         long amount;
         try {
             amount = Long.parseLong(this.betBox.getValue().trim());
         } catch (NumberFormatException e) {
             return;
         }
-        if (clientPhase != DoubleGame.Phase.BETTING.ordinal()) {
-            return;
-        }
+        FlashFx.confirm();
         ModNetwork.sendToServer(new ServerboundDoubleBetPacket(this.selected.ordinal(), amount));
+    }
+
+    private void refreshBetControls() {
+        boolean betting = clientPhase == DoubleGame.Phase.BETTING.ordinal();
+        boolean own = this.hasOwnBet();
+        boolean canBet = betting && !own;
+        this.betButton.active = canBet;
+        this.betButton.setMessage(Component.translatable(
+            own ? "gui.flashstake.double.bet_placed" : "gui.flashstake.double.bet"));
+        this.betBox.setEditable(canBet);
+        for (StyledButton btn : this.colorButtons) {
+            btn.active = canBet;
+        }
+        for (StyledButton btn : this.quickBets) {
+            btn.active = canBet;
+        }
     }
 
     private void startSpinVisual() {
@@ -126,6 +165,8 @@ public class DoubleScreen extends AbstractContainerScreen<DoubleMenu> {
         int winnerIndex = 40 + result.ordinal();
         double jitter = (Math.random() - 0.5) * CELL_W * 0.4;
         this.spinTarget = winnerIndex * CELL_W + CELL_W / 2.0 - REEL_W / 2.0 + jitter;
+        FlashFx.whoosh();
+        UiMotion.pulsePanel();
     }
 
     @Override
@@ -138,23 +179,27 @@ public class DoubleScreen extends AbstractContainerScreen<DoubleMenu> {
         if (clientPhase == DoubleGame.Phase.SPINNING.ordinal() && !this.spinningVisual) {
             this.startSpinVisual();
         }
-        if (this.spinningVisual && System.currentTimeMillis() - this.spinStartMs >= this.spinDurationMs) {
-            this.spinningVisual = false;
+        if (this.spinningVisual) {
+            long elapsed = System.currentTimeMillis() - this.spinStartMs;
+            if (elapsed < this.spinDurationMs) {
+                float t = elapsed / (float) this.spinDurationMs;
+                FlashFx.tick(1.2f + t * 0.8f);
+            } else {
+                this.spinningVisual = false;
+                FlashFx.win();
+            }
         }
-        boolean betting = clientPhase == DoubleGame.Phase.BETTING.ordinal();
-        this.betButton.active = betting;
-        for (StyledButton btn : this.colorButtons) {
-            btn.active = betting;
-        }
+        this.refreshBetControls();
     }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(graphics, mouseX, mouseY, partialTick);
+        UiCursor.tickInRender();
+        graphics.fill(0, 0, this.width, this.height, 0xC0101010);
         super.render(graphics, mouseX, mouseY, partialTick);
-        graphics.drawCenteredString(this.font,
+        UiText.drawCentered(graphics, this.font,
             Component.translatable("gui.flashstake.market.balance", format(MarketScreen.getClientBalance())),
-            this.leftPos + this.imageWidth - 56, this.topPos + 10, UiTheme.NEON_GOLD);
+            this.leftPos + this.imageWidth - 70, this.topPos + 10, UiTheme.NEON_GOLD, 1.05f);
         this.renderTooltip(graphics, mouseX, mouseY);
     }
 
@@ -163,8 +208,8 @@ public class DoubleScreen extends AbstractContainerScreen<DoubleMenu> {
         int x = this.leftPos;
         int y = this.topPos;
         WheelRenderer.neonPanel(graphics, x, y, x + this.imageWidth, y + this.imageHeight, 8, UiTheme.NEON_GOLD);
-        graphics.drawCenteredString(this.font, Component.translatable("gui.flashstake.double.title"),
-            x + this.imageWidth / 2, y + 8, UiTheme.NEON_GOLD);
+        UiText.drawCentered(graphics, this.font, Component.translatable("gui.flashstake.double.title"),
+            x + this.imageWidth / 2, y + 6, UiTheme.NEON_GOLD, 1.25f);
 
         this.renderHistory(graphics, x + 16, y + 26);
 
@@ -174,30 +219,30 @@ public class DoubleScreen extends AbstractContainerScreen<DoubleMenu> {
             case RESULT -> "gui.flashstake.double.phase_result";
         };
         float sec = clientTicksLeft / 20f;
-        graphics.drawCenteredString(this.font,
+        UiText.drawCentered(graphics, this.font,
             Component.translatable(phaseKey, String.format(Locale.ROOT, "%.1f", sec)),
-            x + this.imageWidth / 2, y + 62, UiTheme.TEXT);
+            x + this.imageWidth / 2, y + 58, UiTheme.TEXT, 1.1f);
 
         this.renderReel(graphics, x + REEL_X, y + REEL_Y);
 
         DoubleColor last = DoubleColor.byOrdinalSafe(clientResult);
         if (clientPhase == DoubleGame.Phase.RESULT.ordinal()) {
-            graphics.drawString(this.font,
+            UiText.drawShadow(graphics, this.font,
                 Component.translatable("gui.flashstake.double.last",
                     Component.translatable("gui.flashstake.double.color." + last.name().toLowerCase(Locale.ROOT), last.multiplier())),
-                x + 16, y + 132, last.argb(), false);
+                x + 16, y + 130, last.argb(), 1.08f);
         } else if (clientPhase == DoubleGame.Phase.SPINNING.ordinal()) {
-            graphics.drawString(this.font, Component.translatable("gui.flashstake.double.spinning"),
-                x + 16, y + 132, UiTheme.TEXT_DIM, false);
+            UiText.drawShadow(graphics, this.font, Component.translatable("gui.flashstake.double.spinning"),
+                x + 16, y + 130, UiTheme.TEXT_DIM, 1.05f);
         } else {
-            graphics.drawString(this.font,
+            UiText.drawShadow(graphics, this.font,
                 Component.translatable("gui.flashstake.double.prev",
                     Component.translatable("gui.flashstake.double.color." + last.name().toLowerCase(Locale.ROOT), last.multiplier())),
-                x + 16, y + 132, UiTheme.TEXT_MUTED, false);
+                x + 16, y + 130, UiTheme.TEXT_MUTED, 1.0f);
         }
 
-        graphics.drawString(this.font, Component.translatable("gui.flashstake.double.players"),
-            x + 16, y + 238, UiTheme.TEXT_DIM, false);
+        UiText.drawShadow(graphics, this.font, Component.translatable("gui.flashstake.double.players"),
+            x + 16, y + 236, UiTheme.TEXT_DIM, 1.0f);
         int row = 0;
         for (ClientboundDoubleStatePacket.BetView bet : clientBets) {
             if (row >= 4) {
@@ -207,51 +252,56 @@ public class DoubleScreen extends AbstractContainerScreen<DoubleMenu> {
             String line = bet.playerName() + " · " + format(bet.amount()) + " → ×" + c.multiplier();
             int col = row / 2;
             int local = row % 2;
-            graphics.drawString(this.font, line, x + 16 + col * 180, y + 252 + local * 12, c.argb(), false);
+            UiText.drawShadow(graphics, this.font, Component.literal(line),
+                x + 16 + col * 180, y + 250 + local * 12, c.argb(), 1.0f);
             row++;
         }
         if (clientBets.isEmpty()) {
-            graphics.drawString(this.font, Component.translatable("gui.flashstake.double.no_bets"),
-                x + 16, y + 252, UiTheme.TEXT_MUTED, false);
+            UiText.drawShadow(graphics, this.font, Component.translatable("gui.flashstake.double.no_bets"),
+                x + 16, y + 250, UiTheme.TEXT_MUTED, 1.0f);
         }
 
         for (int i = 0; i < 4; ++i) {
-            if (DoubleColor.values()[i] == this.selected) {
+            if (DoubleColor.values()[i] == this.selected && this.colorButtons[i].active) {
                 StyledButton btn = this.colorButtons[i];
-                graphics.fill(btn.getX() - 1, btn.getY() - 1, btn.getX() + btn.getWidth() + 1, btn.getY() + btn.getHeight() + 1, 0x88FFFFFF);
+                WheelRenderer.roundedRect(graphics,
+                    btn.getX() - 2, btn.getY() - 2,
+                    btn.getX() + btn.getWidth() + 2, btn.getY() + btn.getHeight() + 2,
+                    6, FlashFx.withAlpha(UiTheme.NEON_CYAN, 0.35f));
             }
         }
     }
 
-    /** Newest on the left — colour chips for the last N rounds. */
+    /** Newest on the left — only chips that fit on the line; older are dropped from view. */
     private void renderHistory(GuiGraphics graphics, int hx, int hy) {
-        graphics.drawString(this.font, Component.translatable("gui.flashstake.double.history"),
-            hx, hy, UiTheme.TEXT_DIM, false);
-        int chip = 12;
-        int gap = 2;
+        UiText.drawShadow(graphics, this.font, Component.translatable("gui.flashstake.double.history"),
+            hx, hy, UiTheme.TEXT_DIM, 1.0f);
         int startX = hx;
         int startY = hy + 12;
+        int lineRight = this.leftPos + this.imageWidth - 16;
+        int maxFit = Math.max(1, (lineRight - startX + HIST_GAP) / (HIST_CHIP + HIST_GAP));
+        maxFit = Math.min(maxFit, DoubleGame.HISTORY_SIZE);
+
+        // Soft rail under the chips
+        graphics.fill(startX, startY + HIST_CHIP + 2, lineRight, startY + HIST_CHIP + 3, 0x552A3858);
+
         if (clientHistory.isEmpty()) {
-            graphics.drawString(this.font, Component.translatable("gui.flashstake.double.history_empty"),
-                startX, startY + 2, UiTheme.TEXT_MUTED, false);
+            UiText.drawShadow(graphics, this.font, Component.translatable("gui.flashstake.double.history_empty"),
+                startX, startY + 2, UiTheme.TEXT_MUTED, 0.95f);
             return;
         }
-        int max = Math.min(clientHistory.size(), DoubleGame.HISTORY_SIZE);
+        int max = Math.min(clientHistory.size(), maxFit);
         for (int i = 0; i < max; ++i) {
             DoubleColor c = DoubleColor.byOrdinalSafe(clientHistory.get(i));
-            int cx = startX + i * (chip + gap);
-            if (cx + chip > this.leftPos + this.imageWidth - 16) {
-                break;
-            }
-            graphics.fill(cx, startY, cx + chip, startY + chip, c.argb());
+            int cx = startX + i * (HIST_CHIP + HIST_GAP);
+            WheelRenderer.roundedRect(graphics, cx, startY, cx + HIST_CHIP, startY + HIST_CHIP, 3, c.argb());
             if (i == 0 && clientPhase == DoubleGame.Phase.RESULT.ordinal()) {
-                graphics.fill(cx - 1, startY - 1, cx + chip + 1, startY, UiTheme.NEON_CYAN);
-                graphics.fill(cx - 1, startY + chip, cx + chip + 1, startY + chip + 1, UiTheme.NEON_CYAN);
-                graphics.fill(cx - 1, startY, cx, startY + chip, UiTheme.NEON_CYAN);
-                graphics.fill(cx + chip, startY, cx + chip + 1, startY + chip, UiTheme.NEON_CYAN);
+                WheelRenderer.roundedRect(graphics, cx - 1, startY - 1, cx + HIST_CHIP + 1, startY + HIST_CHIP + 1, 4,
+                    FlashFx.withAlpha(UiTheme.NEON_CYAN, 0.55f));
+                WheelRenderer.roundedRect(graphics, cx, startY, cx + HIST_CHIP, startY + HIST_CHIP, 3, c.argb());
             }
-            String m = Integer.toString(c.multiplier());
-            graphics.drawCenteredString(this.font, m, cx + chip / 2, startY + 2, 0xFF101010);
+            UiText.drawCenteredRaw(graphics, this.font, Integer.toString(c.multiplier()),
+                cx + HIST_CHIP / 2, startY + 3, 0xFF101018, 0.95f);
         }
     }
 
@@ -278,7 +328,8 @@ public class DoubleScreen extends AbstractContainerScreen<DoubleMenu> {
                 continue;
             }
             graphics.fill(cx + 1, ry + 3, cx + CELL_W - 1, ry + REEL_H - 3, color.argb());
-            graphics.drawCenteredString(this.font, "×" + color.multiplier(), cx + CELL_W / 2, ry + 17, 0xFF101010);
+            UiText.drawCenteredRaw(graphics, this.font, "×" + color.multiplier(),
+                cx + CELL_W / 2, ry + 16, 0xFF101018, 1.15f);
         }
         graphics.disableScissor();
 

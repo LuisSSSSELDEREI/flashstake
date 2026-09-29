@@ -37,6 +37,7 @@ import net.execheinz.upgrader.menu.UpgraderMenu;
 import net.execheinz.upgrader.network.ClientboundUpgradeResultPacket;
 import net.execheinz.upgrader.network.ClientboundUpgraderSyncPacket;
 import net.execheinz.upgrader.network.ModNetwork;
+import net.execheinz.upgrader.network.ServerboundOpenArenaPacket;
 import net.execheinz.upgrader.network.ServerboundOpenCasesPacket;
 import net.execheinz.upgrader.network.ServerboundOpenDoublePacket;
 import net.execheinz.upgrader.network.ServerboundOpenMarketPacket;
@@ -143,6 +144,7 @@ extends AbstractContainerScreen<UpgraderMenu> {
     private StyledButton marketButton;
     private StyledButton casesButton;
     private StyledButton doubleButton;
+    private StyledButton arenaButton;
     private StyledButton chanceMinus;
     private StyledButton chancePlus;
     private StyledButton chanceLockButton;
@@ -170,13 +172,40 @@ extends AbstractContainerScreen<UpgraderMenu> {
         this.fastUpgradeButton = StyledButton.neon(x + 116, y + ROW_Y, 22, ROW_H, Component.literal("\u26A1"), UiTheme.NEON_GOLD, b -> ModNetwork.sendToServer(new ServerboundStartUpgradePacket(true)));
         this.fastUpgradeButton.setTooltip(Tooltip.create(Component.translatable("gui.flashstake.fast_upgrade")));
         this.addRenderableWidget(this.fastUpgradeButton);
-        // Nav — flush top-left corner (title sits below, above the wheel)
-        this.marketButton = StyledButton.neon(x + 3, y + 1, 38, 11, Component.translatable("gui.flashstake.market"), UiTheme.NEON_GOLD, b -> ModNetwork.sendToServer(new ServerboundOpenMarketPacket()));
+        // Nav — full labels, wider chips
+        int navY = y + 1;
+        int navH = 12;
+        int navGap = 2;
+        int navW = 50;
+        int navX = x + 3;
+        this.marketButton = StyledButton.neon(navX, navY, navW, navH, Component.translatable("gui.flashstake.market"), UiTheme.NEON_GOLD, b -> {
+            FlashFx.click();
+            UiCursor.captureIfInFlashStakeUi();
+            ModNetwork.sendToServer(new ServerboundOpenMarketPacket());
+        });
         this.addRenderableWidget(this.marketButton);
-        this.casesButton = StyledButton.neon(x + 43, y + 1, 38, 11, Component.translatable("gui.flashstake.cases"), UiTheme.NEON_MAGENTA, b -> ModNetwork.sendToServer(new ServerboundOpenCasesPacket()));
+        navX += navW + navGap;
+        this.casesButton = StyledButton.neon(navX, navY, navW, navH, Component.translatable("gui.flashstake.cases"), UiTheme.NEON_MAGENTA, b -> {
+            FlashFx.click();
+            UiCursor.captureIfInFlashStakeUi();
+            ModNetwork.sendToServer(new ServerboundOpenCasesPacket());
+        });
         this.addRenderableWidget(this.casesButton);
-        this.doubleButton = StyledButton.neon(x + 83, y + 1, 38, 11, Component.translatable("gui.flashstake.double"), UiTheme.NEON_LIME, b -> ModNetwork.sendToServer(new ServerboundOpenDoublePacket()));
+        navX += navW + navGap;
+        this.doubleButton = StyledButton.neon(navX, navY, navW, navH, Component.translatable("gui.flashstake.double"), UiTheme.NEON_LIME, b -> {
+            FlashFx.click();
+            UiCursor.captureIfInFlashStakeUi();
+            ModNetwork.sendToServer(new ServerboundOpenDoublePacket());
+        });
         this.addRenderableWidget(this.doubleButton);
+        navX += navW + navGap;
+        this.arenaButton = StyledButton.neon(navX, navY, navW, navH, Component.translatable("gui.flashstake.arena"), UiTheme.NEON_PURPLE, b -> {
+            FlashFx.click();
+            UiCursor.captureIfInFlashStakeUi();
+            ModNetwork.sendToServer(new ServerboundOpenArenaPacket());
+        });
+        this.addRenderableWidget(this.arenaButton);
+        UiCursor.scheduleRestore();
         this.minusButton = StyledButton.neon(x + TARGET_X - 19, y + CARD_Y2 - 22, 18, 16, Component.literal("-"), UiTheme.NEON_CYAN, b -> this.adjustTargetCount(-1, hasShiftDown()));
         this.plusButton = StyledButton.neon(x + TARGET_X + 19, y + CARD_Y2 - 22, 18, 16, Component.literal("+"), UiTheme.NEON_CYAN, b -> this.adjustTargetCount(1, hasShiftDown()));
         this.addRenderableWidget(this.minusButton);
@@ -377,6 +406,7 @@ extends AbstractContainerScreen<UpgraderMenu> {
     }
 
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        UiCursor.tickInRender();
         boolean ready;
         boolean bl = ready = !this.spinning && !this.pickerOpen;
         UpgraderMenu menu = this.menu;
@@ -425,16 +455,47 @@ extends AbstractContainerScreen<UpgraderMenu> {
             this.plusButton.active = qtyReady && menu.getTargetCount() < menu.getTarget().getDefaultMaxStackSize();
             this.plusButton.visible = !this.pickerOpen && menu.getTarget() != null;
         }
-        this.renderBackground(graphics, mouseX, mouseY, partialTick);
-        super.render(graphics, mouseX, mouseY, partialTick);
-        if (this.pickerOpen) {
-            this.renderPicker(graphics, mouseX, mouseY, partialTick);
-        } else {
-            this.renderTargetTooltip(graphics, mouseX, mouseY);
+        if (this.arenaButton != null) {
+            this.arenaButton.active = ready;
+            this.arenaButton.visible = !this.pickerOpen;
         }
+        // Cheap dim — skip vanilla blur/dirt
+        graphics.fill(0, 0, this.width, this.height, 0xC0101010);
+        if (this.pickerOpen) {
+            // Picker only — do not render the upgrade UI / inventory underneath.
+            this.renderPickerOnly(graphics, mouseX, mouseY, partialTick);
+            return;
+        }
+        super.render(graphics, mouseX, mouseY, partialTick);
+        this.renderTargetTooltip(graphics, mouseX, mouseY);
+    }
+
+    /** Full-screen picker mode: no inventory bleed, no upgrade widgets behind. */
+    private void renderPickerOnly(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        int x = this.leftPos;
+        int y = this.topPos;
+        // Cover the entire upgrader window (incl. inventory area)
+        WheelRenderer.neonPanel(graphics, x, y, x + WIDTH, y + HEIGHT, 8, UiTheme.NEON_PURPLE);
+        // Manually render only picker-related widgets (search / filters / sort)
+        if (this.searchBox != null) {
+            this.searchBox.render(graphics, mouseX, mouseY, partialTick);
+        }
+        if (this.minPriceBox != null) {
+            this.minPriceBox.render(graphics, mouseX, mouseY, partialTick);
+        }
+        if (this.maxPriceBox != null) {
+            this.maxPriceBox.render(graphics, mouseX, mouseY, partialTick);
+        }
+        if (this.pickerSortButton != null && this.pickerSortButton.visible) {
+            this.pickerSortButton.render(graphics, mouseX, mouseY, partialTick);
+        }
+        this.renderPicker(graphics, mouseX, mouseY, partialTick);
     }
 
     protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
+        if (this.pickerOpen) {
+            return;
+        }
         int x = this.leftPos;
         int y = this.topPos;
         WheelRenderer.neonPanel(graphics, x, y, x + WIDTH, y + HEIGHT, 8, UiTheme.NEON_CYAN);
@@ -443,9 +504,7 @@ extends AbstractContainerScreen<UpgraderMenu> {
         WheelRenderer.neonSlot(graphics, x + INPUT_X, y + INPUT_Y);
         WheelRenderer.neonSlot(graphics, x + TARGET_X, y + TARGET_Y);
         this.renderCardText(graphics);
-        if (!this.pickerOpen) {
-            this.renderWheel(graphics);
-        }
+        this.renderWheel(graphics);
         this.renderInventoryBg(graphics);
     }
 
@@ -545,6 +604,9 @@ extends AbstractContainerScreen<UpgraderMenu> {
     }
 
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
+        if (this.pickerOpen) {
+            return;
+        }
         // Title centered above the upgrade wheel, clear of nav buttons
         graphics.pose().pushPose();
         graphics.pose().translate(WHEEL_CX, 18.0f, 0.0f);
@@ -553,11 +615,9 @@ extends AbstractContainerScreen<UpgraderMenu> {
         graphics.pose().popPose();
         int labelY = this.inventoryLabelY;
         graphics.drawString(this.font, this.playerInventoryTitle, this.inventoryLabelX, labelY, TEXT_DIM, false);
-        if (!this.pickerOpen) {
-            Component balance = Component.translatable("gui.flashstake.market.balance", format(MarketScreen.getClientBalance()));
-            int balX = INV_X + 9 * 18 - this.font.width(balance);
-            graphics.drawString(this.font, balance, balX, labelY, UiTheme.NEON_GOLD, false);
-        }
+        Component balance = Component.translatable("gui.flashstake.market.balance", format(MarketScreen.getClientBalance()));
+        int balX = INV_X + 9 * 18 - this.font.width(balance);
+        graphics.drawString(this.font, balance, balX, labelY, UiTheme.NEON_GOLD, false);
     }
 
     protected void renderTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -575,12 +635,9 @@ extends AbstractContainerScreen<UpgraderMenu> {
 
     private void renderPicker(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         int index;
-        graphics.pose().pushPose();
-        graphics.pose().translate(0.0f, 0.0f, 300.0f);
-        WheelRenderer.neonPanel(graphics, this.leftPos + PICKER_X1, this.topPos + PICKER_Y1, this.leftPos + PICKER_X2, this.topPos + PICKER_Y2, 6, UiTheme.NEON_PURPLE);
-        this.searchBox.render(graphics, mouseX, mouseY, partialTick);
-        this.minPriceBox.render(graphics, mouseX, mouseY, partialTick);
-        this.maxPriceBox.render(graphics, mouseX, mouseY, partialTick);
+        // Inner content only — outer panel already drawn by renderPickerOnly
+        graphics.drawCenteredString(this.font, Component.translatable("gui.flashstake.pick_target"),
+            this.leftPos + WIDTH / 2, this.topPos + 8, UiTheme.NEON_PURPLE);
         graphics.drawString(this.font, Component.translatable("gui.flashstake.market.filters"),
             this.leftPos + 140, this.topPos + 48, TEXT_DIM, false);
         int first = this.scrollRow * GRID_COLS;
@@ -596,7 +653,7 @@ extends AbstractContainerScreen<UpgraderMenu> {
             hovered = stack;
         }
         int pages = Math.max(1, this.maxScrollRow() + 1);
-        graphics.drawCenteredString(this.font, Component.translatable("gui.flashstake.picker_footer", this.filtered.size(), this.scrollRow + 1, pages), this.leftPos + WIDTH / 2, this.topPos + PICKER_Y2 - 14, TEXT_DIM);
+        graphics.drawCenteredString(this.font, Component.translatable("gui.flashstake.picker_footer", this.filtered.size(), this.scrollRow + 1, pages), this.leftPos + WIDTH / 2, this.topPos + HEIGHT - 14, TEXT_DIM);
         this.renderPickerScrollbar(graphics, mouseX, mouseY);
         if (hovered != null) {
             ArrayList<Component> lines = new ArrayList<>();
@@ -610,7 +667,6 @@ extends AbstractContainerScreen<UpgraderMenu> {
             }
             graphics.renderComponentTooltip(this.font, lines, mouseX, mouseY);
         }
-        graphics.pose().popPose();
     }
 
     private void ensureCatalog() {
@@ -802,6 +858,10 @@ extends AbstractContainerScreen<UpgraderMenu> {
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (this.pickerOpen) {
             int index;
+            if (this.pickerSortButton != null && this.pickerSortButton.visible
+                && this.pickerSortButton.mouseClicked(mouseX, mouseY, button)) {
+                return true;
+            }
             if (this.searchBox.mouseClicked(mouseX, mouseY, button)) {
                 this.searchBox.setFocused(true);
                 this.minPriceBox.setFocused(false);
@@ -840,10 +900,11 @@ extends AbstractContainerScreen<UpgraderMenu> {
                 this.closePicker();
                 return true;
             }
-            if (!UpgraderScreen.inBox((int)mouseX, (int)mouseY, this.leftPos + PICKER_X1, this.topPos + PICKER_Y1, PICKER_X2 - PICKER_X1, PICKER_Y2 - PICKER_Y1)) {
+            // Click outside the whole upgrader panel closes the picker
+            if (!UpgraderScreen.inBox((int)mouseX, (int)mouseY, this.leftPos, this.topPos, WIDTH, HEIGHT)) {
                 this.closePicker();
             }
-            return true;
+            return true; // swallow clicks so inventory behind never receives them
         }
         if (!this.spinning && UpgraderScreen.inBox((int)mouseX, (int)mouseY, this.leftPos + TARGET_X, this.topPos + TARGET_Y, 18, 18)) {
             if (button == 1) {
