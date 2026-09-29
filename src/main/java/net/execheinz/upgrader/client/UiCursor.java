@@ -73,7 +73,8 @@ public final class UiCursor {
         return screen instanceof UpgraderScreen
             || screen instanceof MarketScreen
             || screen instanceof CasesScreen
-            || screen instanceof DoubleScreen;
+            || screen instanceof DoubleScreen
+            || screen instanceof ArenaScreen;
     }
 
     private static void writeMouseHandler(MouseHandler handler, double x, double y) {

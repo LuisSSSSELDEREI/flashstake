@@ -51,6 +51,8 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
     private static long clientSellWindowMsLeft;
     private static long clientSellSyncedAt;
 
+    private static List<ItemStack> sharedCatalogStacks;
+
     private boolean buyMode = true;
     private SortMode sortMode = SortMode.VALUE_DESC;
     private EditBox searchBox;
@@ -97,6 +99,11 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
         clientSellRemaining = packet.sellRemaining();
         clientSellWindowMsLeft = packet.sellWindowMsLeft();
         clientSellSyncedAt = System.currentTimeMillis();
+    }
+
+    /** Drop shared UI catalog when prices invalidate. */
+    public static void clearSharedCatalog() {
+        sharedCatalogStacks = null;
     }
 
     private static int stockOf(Item item) {
@@ -335,7 +342,8 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
             return;
         }
         ModNetwork.sendToServer(new ServerboundMarketBuyPacket(key.toString(), this.buyCount));
-        this.playClick();
+        FlashFx.confirm();
+        UiMotion.pulsePanel();
         this.closeBuyPanel();
     }
 
@@ -343,11 +351,12 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
         int units = this.menu.sellUnitCount();
         int left = sellRemaining();
         if (units <= 0 || units > left) {
-            this.playClick();
+            FlashFx.click();
             return;
         }
         ModNetwork.sendToServer(new ServerboundMarketSellPacket());
-        this.playClick();
+        FlashFx.confirm();
+        UiMotion.pulsePanel();
     }
 
     private void refreshSellButton() {
@@ -388,11 +397,20 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
         if (this.minecraft == null || this.minecraft.level == null) {
             return;
         }
+        if (sharedCatalogStacks != null && ItemValues.isWarm()) {
+            this.catalog = sharedCatalogStacks;
+            return;
+        }
         ArrayList<ItemStack> items = new ArrayList<>();
         for (Item item : ItemValues.catalog(this.minecraft.level)) {
             items.add(new ItemStack(item));
         }
-        this.catalog = items;
+        if (ItemValues.isWarm()) {
+            sharedCatalogStacks = List.copyOf(items);
+            this.catalog = sharedCatalogStacks;
+        } else {
+            this.catalog = items;
+        }
     }
 
     private long parsePrice(EditBox box) {
@@ -498,7 +516,8 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         UiCursor.tickInRender();
-        this.renderBackground(graphics, mouseX, mouseY, partialTick);
+        // Cheap dim — skip vanilla blur/dirt (big open hitch)
+        graphics.fill(0, 0, this.width, this.height, 0xC0101010);
         super.render(graphics, mouseX, mouseY, partialTick);
         // Force buy qty controls above slots/panel so they stay clickable
         if (this.buyPanelOpen()) {
@@ -596,8 +615,7 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
     }
 
     private void renderBalanceBanner(GuiGraphics graphics) {
-        // Compact balance between sell and back tabs (top row)
-        Component label = Component.translatable("gui.flashstake.market.balance", format(clientBalance));
+        Component label = Component.translatable("gui.flashstake.market.balance", format(UiMotion.smoothBalance()));
         int tw = this.font.width(label);
         int cx = this.leftPos + this.imageWidth / 2;
         int y1 = this.topPos + 4;
@@ -605,6 +623,9 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
         int x2 = cx + tw / 2 + 8;
         WheelRenderer.neonBanner(graphics, x1, y1, x2, y1 + 16, UiTheme.NEON_GOLD);
         graphics.drawCenteredString(this.font, label, cx, y1 + 4, UiTheme.NEON_GOLD);
+        UiMotion.renderFloaters(graphics, this.font, cx + tw / 2 + 12, y1 + 4);
+        UiMotion.renderPanelPulse(graphics, this.leftPos, this.topPos,
+            this.leftPos + this.imageWidth, this.topPos + this.imageHeight, UiTheme.NEON_CYAN);
     }
 
     @Override

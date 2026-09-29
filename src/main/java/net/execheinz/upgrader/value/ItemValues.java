@@ -63,9 +63,46 @@ public final class ItemValues {
     /** Hard floor — no item may be worth less than 1. */
     private static final double MIN_UNIT = 1.0;
     private static volatile Map<Item, Double> values;
+    /** Table pushed by the server; survives local invalidate() until logout. */
+    private static volatile Map<Item, Double> synced;
+    /** Recipe-less estimate, cached so remote clients don't recompute per item. */
+    private static volatile Map<Item, Double> fallback;
+    private static volatile List<Item> catalogCache;
 
     public static void invalidate() {
         values = null;
+        fallback = null;
+        catalogCache = null;
+    }
+
+    public static void applySynced(Map<Item, Double> table) {
+        synced = Map.copyOf(table);
+        fallback = null;
+        catalogCache = null;
+    }
+
+    public static void clearSynced() {
+        synced = null;
+        invalidate();
+    }
+
+    /** Snapshot for syncing to clients; computes with server recipes if needed. */
+    public static Map<Item, Double> snapshot(Level level) {
+        return ItemValues.table(level);
+    }
+
+    /** True once craft prices come from real recipes (local or server-synced). */
+    public static boolean isWarm() {
+        return values != null || synced != null;
+    }
+
+    /** Prefetch price table + catalog (call when integrated server is ready). */
+    public static void warmup(Level level) {
+        if (level == null) {
+            return;
+        }
+        ItemValues.table(level);
+        ItemValues.catalog(level);
     }
 
     public static boolean isBlacklisted(Item item) {
@@ -103,19 +140,39 @@ public final class ItemValues {
 
     public static List<Item> catalog(Level level) {
         Map<Item, Double> table = ItemValues.table(level);
-        ArrayList<Item> items = new ArrayList<Item>();
-        for (Item item : ForgeRegistries.ITEMS.getValues()) {
-            if (ItemValues.isBlacklisted(item)) continue;
-            items.add(item);
+        List<Item> cached = catalogCache;
+        if (cached != null) {
+            return cached;
         }
-        items.sort((a, b) -> {
-            int byValue = Double.compare(table.getOrDefault(a, ItemValues.rarityFallback(a)), table.getOrDefault(b, ItemValues.rarityFallback(b)));
-            if (byValue != 0) {
-                return byValue;
+        synchronized (ItemValues.class) {
+            cached = catalogCache;
+            if (cached != null) {
+                return cached;
             }
-            return String.valueOf(ForgeRegistries.ITEMS.getKey(a)).compareTo(String.valueOf(ForgeRegistries.ITEMS.getKey(b)));
-        });
-        return items;
+            ArrayList<Item> items = new ArrayList<>();
+            for (Item item : ForgeRegistries.ITEMS.getValues()) {
+                if (ItemValues.isBlacklisted(item)) {
+                    continue;
+                }
+                items.add(item);
+            }
+            items.sort((a, b) -> {
+                int byValue = Double.compare(
+                    table.getOrDefault(a, ItemValues.rarityFallback(a)),
+                    table.getOrDefault(b, ItemValues.rarityFallback(b)));
+                if (byValue != 0) {
+                    return byValue;
+                }
+                return String.valueOf(ForgeRegistries.ITEMS.getKey(a))
+                    .compareTo(String.valueOf(ForgeRegistries.ITEMS.getKey(b)));
+            });
+            // Only freeze catalog once prices are warm (same rule as table cache).
+            if (ItemValues.isWarm()) {
+                catalogCache = List.copyOf(items);
+                return catalogCache;
+            }
+            return items;
+        }
     }
 
     /*
@@ -128,18 +185,33 @@ public final class ItemValues {
         if (local != null) {
             return local;
         }
+        if (!(level instanceof ServerLevel)) {
+            Map<Item, Double> remote = synced;
+            if (remote != null) {
+                return remote;
+            }
+        }
         synchronized (ItemValues.class) {
             local = values;
             if (local != null) {
                 return local;
             }
-            // 1.21.4 client worlds have no full recipe list. Wait until we can see recipes
-            // (integrated server) before caching — otherwise hopper/etc stay at rarity=1 forever.
+            // 1.21.4 remote clients have no recipe list: prefer the server-synced table.
             RecipeManager recipes = ItemValues.recipeManager(level);
-            Map<Item, Double> computed = ItemValues.compute(level);
-            if (recipes != null) {
-                values = computed;
+            if (recipes == null) {
+                Map<Item, Double> remote = synced;
+                if (remote != null) {
+                    return remote;
+                }
+                Map<Item, Double> est = fallback;
+                if (est == null) {
+                    est = ItemValues.compute(level);
+                    fallback = est;
+                }
+                return est;
             }
+            Map<Item, Double> computed = ItemValues.compute(level);
+            values = computed;
             return computed;
         }
     }
