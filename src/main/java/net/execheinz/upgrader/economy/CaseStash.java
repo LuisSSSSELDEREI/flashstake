@@ -13,8 +13,12 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
+/**
+ * Case profile inventory — 54 slots, stacks up to 999 so loot stays visible.
+ */
 public final class CaseStash {
-    public static final int SLOTS = 27;
+    public static final int SLOTS = 54;
+    public static final int MAX_STACK = 999;
     private static final String KEY = "FlashStakeCaseStash";
 
     private CaseStash() {
@@ -30,12 +34,16 @@ public final class CaseStash {
             return out;
         }
         ListTag list = data.getList(KEY, Tag.TAG_COMPOUND);
-        for (int i = 0; i < SLOTS; ++i) {
-            if (i < list.size()) {
-                out.add(ItemStack.of(list.getCompound(i)));
-            } else {
-                out.add(ItemStack.EMPTY);
+        int n = Math.min(list.size(), SLOTS);
+        for (int i = 0; i < n; ++i) {
+            ItemStack stack = ItemStack.of(list.getCompound(i));
+            if (!stack.isEmpty() && stack.getCount() > MAX_STACK) {
+                stack.setCount(MAX_STACK);
             }
+            out.add(stack);
+        }
+        while (out.size() < SLOTS) {
+            out.add(ItemStack.EMPTY);
         }
         return out;
     }
@@ -46,12 +54,58 @@ public final class CaseStash {
             ItemStack stack = i < stacks.size() ? stacks.get(i) : ItemStack.EMPTY;
             CompoundTag tag = new CompoundTag();
             if (!stack.isEmpty()) {
-                stack.copy().save(tag);
+                ItemStack copy = stack.copy();
+                if (copy.getCount() > MAX_STACK) {
+                    copy.setCount(MAX_STACK);
+                }
+                copy.save(tag);
             }
             list.add(tag);
         }
         player.getPersistentData().put(KEY, list);
         sync(player);
+    }
+
+    /** Compact same-item stacks up to MAX_STACK (keeps items visible / frees slots). */
+    public static void compact(ServerPlayer player) {
+        List<ItemStack> slots = get(player);
+        ArrayList<ItemStack> merged = new ArrayList<>();
+        for (ItemStack raw : slots) {
+            if (raw.isEmpty()) {
+                continue;
+            }
+            ItemStack stack = raw.copy();
+            for (ItemStack into : merged) {
+                if (stack.isEmpty()) {
+                    break;
+                }
+                if (!ItemStack.isSameItemSameTags(into, stack)) {
+                    continue;
+                }
+                int space = MAX_STACK - into.getCount();
+                if (space <= 0) {
+                    continue;
+                }
+                int move = Math.min(space, stack.getCount());
+                into.grow(move);
+                stack.shrink(move);
+            }
+            while (!stack.isEmpty()) {
+                int put = Math.min(MAX_STACK, stack.getCount());
+                ItemStack part = stack.copy();
+                part.setCount(put);
+                stack.shrink(put);
+                merged.add(part);
+            }
+        }
+        ArrayList<ItemStack> out = new ArrayList<>(SLOTS);
+        for (int i = 0; i < SLOTS; ++i) {
+            out.add(i < merged.size() ? merged.get(i) : ItemStack.EMPTY);
+        }
+        for (int i = SLOTS; i < merged.size(); ++i) {
+            giveToPlayer(player, merged.get(i));
+        }
+        set(player, out);
     }
 
     public static boolean add(ServerPlayer player, ItemStack stack) {
@@ -68,7 +122,7 @@ public final class CaseStash {
             if (!ItemStack.isSameItemSameTags(slot, remaining)) {
                 continue;
             }
-            int space = Math.min(slot.getMaxStackSize() - slot.getCount(), remaining.getCount());
+            int space = Math.min(MAX_STACK - slot.getCount(), remaining.getCount());
             if (space <= 0) {
                 continue;
             }
@@ -79,24 +133,38 @@ public final class CaseStash {
             if (!slots.get(i).isEmpty()) {
                 continue;
             }
-            int put = Math.min(remaining.getMaxStackSize(), remaining.getCount());
+            int put = Math.min(MAX_STACK, remaining.getCount());
             slots.set(i, remaining.split(put));
         }
         set(player, slots);
         if (!remaining.isEmpty()) {
-            // overflow → player inv / drop
-            if (!player.getInventory().add(remaining.copy())) {
-                player.drop(remaining.copy(), false);
-            }
+            giveToPlayer(player, remaining);
             return false;
         }
         return true;
+    }
+
+    /** Put item straight into player inventory (overflow drops on ground). */
+    public static void deliver(ServerPlayer player, ItemStack stack) {
+        giveToPlayer(player, stack);
+    }
+
+    private static void giveToPlayer(ServerPlayer player, ItemStack stack) {
+        ItemStack left = stack.copy();
+        while (!left.isEmpty()) {
+            int chunk = Math.min(left.getMaxStackSize(), left.getCount());
+            ItemStack piece = left.split(chunk);
+            if (!player.getInventory().add(piece.copy())) {
+                player.drop(piece.copy(), false);
+            }
+        }
     }
 
     public static void addAll(ServerPlayer player, List<ItemStack> stacks) {
         for (ItemStack stack : stacks) {
             add(player, stack);
         }
+        compact(player);
     }
 
     public static boolean withdraw(ServerPlayer player, int slot) {
@@ -111,9 +179,7 @@ public final class CaseStash {
         ItemStack copy = stack.copy();
         slots.set(slot, ItemStack.EMPTY);
         set(player, slots);
-        if (!player.getInventory().add(copy)) {
-            player.drop(copy, false);
-        }
+        giveToPlayer(player, copy);
         return true;
     }
 
@@ -127,29 +193,29 @@ public final class CaseStash {
             }
             ItemStack copy = stack.copy();
             slots.set(i, ItemStack.EMPTY);
-            if (!player.getInventory().add(copy)) {
-                player.drop(copy, false);
-            }
+            giveToPlayer(player, copy);
             ++moved;
         }
         set(player, slots);
         return moved;
     }
 
-
-    /** Put item straight into player inventory (overflow drops on ground). */
-    public static void deliver(ServerPlayer player, ItemStack stack) {
-        if (stack == null || stack.isEmpty()) {
-            return;
+    public static long sell(ServerPlayer player, int slot) {
+        if (slot < 0 || slot >= SLOTS) {
+            return 0L;
         }
-        ItemStack left = stack.copy();
-        while (!left.isEmpty()) {
-            int chunk = Math.min(left.getMaxStackSize(), left.getCount());
-            ItemStack piece = left.split(chunk);
-            if (!player.getInventory().add(piece.copy())) {
-                player.drop(piece.copy(), false);
-            }
+        List<ItemStack> slots = get(player);
+        ItemStack stack = slots.get(slot);
+        if (stack.isEmpty()) {
+            return 0L;
         }
+        long value = Math.max(0L, Math.round(ItemValues.stackValue(player.getLevel(), stack)));
+        slots.set(slot, ItemStack.EMPTY);
+        set(player, slots);
+        if (value > 0L) {
+            PlayerBalance.add(player, value);
+        }
+        return value;
     }
 
     public static List<ItemStack> takeSlots(ServerPlayer player, List<Integer> indices) {
@@ -173,24 +239,6 @@ public final class CaseStash {
         }
         set(player, slots);
         return taken;
-    }
-
-    public static long sell(ServerPlayer player, int slot) {
-        if (slot < 0 || slot >= SLOTS) {
-            return 0L;
-        }
-        List<ItemStack> slots = get(player);
-        ItemStack stack = slots.get(slot);
-        if (stack.isEmpty()) {
-            return 0L;
-        }
-        long value = Math.max(0L, Math.round(ItemValues.stackValue(player.getLevel(), stack)));
-        slots.set(slot, ItemStack.EMPTY);
-        set(player, slots);
-        if (value > 0L) {
-            PlayerBalance.add(player, value);
-        }
-        return value;
     }
 
     public static long sellAll(ServerPlayer player) {

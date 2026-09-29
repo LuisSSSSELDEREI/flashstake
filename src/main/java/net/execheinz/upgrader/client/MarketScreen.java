@@ -30,10 +30,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.registries.ForgeRegistries;
 
 public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
-    public static void clearSharedCatalog() {
-        // Price-table sync may invalidate craft prices; catalog rebuilt lazily.
-    }
-
     private enum SortMode {
         VALUE_DESC, VALUE_ASC, NAME
     }
@@ -56,6 +52,8 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
     private static int clientSellRemaining = 100;
     private static long clientSellWindowMsLeft;
     private static long clientSellSyncedAt;
+
+    private static List<ItemStack> sharedCatalogStacks;
 
     private boolean buyMode = true;
     private SortMode sortMode = SortMode.VALUE_DESC;
@@ -103,6 +101,11 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
         clientSellRemaining = packet.sellRemaining();
         clientSellWindowMsLeft = packet.sellWindowMsLeft();
         clientSellSyncedAt = System.currentTimeMillis();
+    }
+
+    /** Drop shared UI catalog when prices invalidate. */
+    public static void clearSharedCatalog() {
+        sharedCatalogStacks = null;
     }
 
     private static int stockOf(Item item) {
@@ -387,11 +390,20 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
         if (this.minecraft == null || this.minecraft.level == null) {
             return;
         }
+        if (sharedCatalogStacks != null && ItemValues.isWarm()) {
+            this.catalog = sharedCatalogStacks;
+            return;
+        }
         ArrayList<ItemStack> items = new ArrayList<>();
         for (Item item : ItemValues.catalog(this.minecraft.level)) {
             items.add(new ItemStack(item));
         }
-        this.catalog = items;
+        if (ItemValues.isWarm()) {
+            sharedCatalogStacks = List.copyOf(items);
+            this.catalog = sharedCatalogStacks;
+        } else {
+            this.catalog = items;
+        }
     }
 
     private long parsePrice(EditBox box) {
