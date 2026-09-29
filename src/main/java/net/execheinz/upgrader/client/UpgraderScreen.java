@@ -39,6 +39,7 @@ import net.execheinz.upgrader.menu.UpgraderMenu;
 import net.execheinz.upgrader.network.ClientboundUpgradeResultPacket;
 import net.execheinz.upgrader.network.ClientboundUpgraderSyncPacket;
 import net.execheinz.upgrader.network.ModNetwork;
+import net.execheinz.upgrader.network.ServerboundOpenArenaPacket;
 import net.execheinz.upgrader.network.ServerboundOpenCasesPacket;
 import net.execheinz.upgrader.network.ServerboundOpenDoublePacket;
 import net.execheinz.upgrader.network.ServerboundOpenMarketPacket;
@@ -144,6 +145,7 @@ extends AbstractContainerScreen<UpgraderMenu> {
     private StyledButton marketButton;
     private StyledButton casesButton;
     private StyledButton doubleButton;
+    private StyledButton arenaButton;
     private StyledButton chanceMinus;
     private StyledButton chancePlus;
     private StyledButton chanceLockButton;
@@ -171,12 +173,14 @@ extends AbstractContainerScreen<UpgraderMenu> {
         this.fastUpgradeButton = StyledButton.neon(x + 116, y + ROW_Y, 22, ROW_H, Component.literal("\u26A1"), UiTheme.NEON_GOLD, b -> ModNetwork.sendToServer(new ServerboundStartUpgradePacket(true)));
         this.addRenderableWidget(this.fastUpgradeButton);
         // Nav — flush top-left corner (title sits below, above the wheel)
-        this.marketButton = StyledButton.neon(x + 3, y + 1, 38, 11, Component.translatable("gui.flashstake.market"), UiTheme.NEON_GOLD, b -> ModNetwork.sendToServer(new ServerboundOpenMarketPacket()));
+        this.marketButton = StyledButton.neon(x + 3, y + 1, 34, 11, Component.translatable("gui.flashstake.market"), UiTheme.NEON_GOLD, b -> ModNetwork.sendToServer(new ServerboundOpenMarketPacket()));
         this.addRenderableWidget(this.marketButton);
-        this.casesButton = StyledButton.neon(x + 43, y + 1, 38, 11, Component.translatable("gui.flashstake.cases"), UiTheme.NEON_MAGENTA, b -> ModNetwork.sendToServer(new ServerboundOpenCasesPacket()));
+        this.casesButton = StyledButton.neon(x + 39, y + 1, 34, 11, Component.translatable("gui.flashstake.cases"), UiTheme.NEON_MAGENTA, b -> ModNetwork.sendToServer(new ServerboundOpenCasesPacket()));
         this.addRenderableWidget(this.casesButton);
-        this.doubleButton = StyledButton.neon(x + 83, y + 1, 38, 11, Component.translatable("gui.flashstake.double"), UiTheme.NEON_LIME, b -> ModNetwork.sendToServer(new ServerboundOpenDoublePacket()));
+        this.doubleButton = StyledButton.neon(x + 75, y + 1, 34, 11, Component.translatable("gui.flashstake.double"), UiTheme.NEON_LIME, b -> ModNetwork.sendToServer(new ServerboundOpenDoublePacket()));
         this.addRenderableWidget(this.doubleButton);
+        this.arenaButton = StyledButton.neon(x + 111, y + 1, 34, 11, Component.translatable("gui.flashstake.arena"), UiTheme.NEON_PURPLE, b -> ModNetwork.sendToServer(new ServerboundOpenArenaPacket()));
+        this.addRenderableWidget(this.arenaButton);
         this.minusButton = StyledButton.neon(x + TARGET_X - 19, y + CARD_Y2 - 22, 18, 16, Component.literal("-"), UiTheme.NEON_CYAN, b -> this.adjustTargetCount(-1, hasShiftDown()));
         this.plusButton = StyledButton.neon(x + TARGET_X + 19, y + CARD_Y2 - 22, 18, 16, Component.literal("+"), UiTheme.NEON_CYAN, b -> this.adjustTargetCount(1, hasShiftDown()));
         this.addRenderableWidget(this.minusButton);
@@ -405,6 +409,10 @@ extends AbstractContainerScreen<UpgraderMenu> {
         if (this.doubleButton != null) {
             this.doubleButton.active = ready;
             this.doubleButton.visible = !this.pickerOpen;
+        }
+        if (this.arenaButton != null) {
+            this.arenaButton.active = ready;
+            this.arenaButton.visible = !this.pickerOpen;
         }
         if (this.chanceLockButton != null) {
             this.chanceLockButton.active = ready;

@@ -136,6 +136,45 @@ public final class CaseStash {
         return moved;
     }
 
+
+    /** Put item straight into player inventory (overflow drops on ground). */
+    public static void deliver(ServerPlayer player, ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return;
+        }
+        ItemStack left = stack.copy();
+        while (!left.isEmpty()) {
+            int chunk = Math.min(left.getMaxStackSize(), left.getCount());
+            ItemStack piece = left.split(chunk);
+            if (!player.getInventory().add(piece.copy())) {
+                player.drop(piece.copy(), false);
+            }
+        }
+    }
+
+    public static List<ItemStack> takeSlots(ServerPlayer player, List<Integer> indices) {
+        if (indices == null || indices.isEmpty()) {
+            return List.of();
+        }
+        List<ItemStack> slots = get(player);
+        ArrayList<ItemStack> taken = new ArrayList<>(indices.size());
+        for (int idx : indices) {
+            if (idx < 0 || idx >= SLOTS) {
+                return List.of();
+            }
+            ItemStack stack = slots.get(idx);
+            if (stack.isEmpty()) {
+                return List.of();
+            }
+            taken.add(stack.copy());
+        }
+        for (int idx : indices) {
+            slots.set(idx, ItemStack.EMPTY);
+        }
+        set(player, slots);
+        return taken;
+    }
+
     public static long sell(ServerPlayer player, int slot) {
         if (slot < 0 || slot >= SLOTS) {
             return 0L;

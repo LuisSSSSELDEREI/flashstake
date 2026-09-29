@@ -126,6 +126,7 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
     @Override
     protected void init() {
         super.init();
+        UiCursor.scheduleRestore();
         int x = this.leftPos;
         int y = this.topPos;
         this.backButton = this.addRenderableWidget(StyledButton.chip(x + 8, y + 6, 50, 16,
@@ -425,7 +426,9 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
 
     @Override
     public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-        GuiGraphics graphics = GuiGraphics.of(poseStack);        this.updateWidgetStates();
+        GuiGraphics graphics = GuiGraphics.of(poseStack);
+        UiCursor.tickInRender();
+        this.updateWidgetStates();
         this.renderBackground(poseStack);
         super.render(graphics.pose(), mouseX, mouseY, partialTick);
         graphics.drawCenteredString(this.font,

@@ -13,18 +13,20 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 
 /**
- * Server-wide Double roulette: betting window → spin → settle → repeat.
- * Multiple players can bet on the same round.
+ * Server-wide Double roulette.
+ * Bets stay active if the player disconnects — payout is applied online or queued offline.
+ * History is persisted and clipped to the visible UI line.
  */
 public final class DoubleGame {
     public enum Phase {
         BETTING, SPINNING, RESULT
     }
 
-    public static final int BETTING_TICKS = 300;  // 15s — окно ставок
-    public static final int SPINNING_TICKS = 120; // 6s — анимация
-    public static final int RESULT_TICKS = 100;   // 5s — показ результата
-    public static final int HISTORY_SIZE = 25;
+    public static final int BETTING_TICKS = 300;
+    public static final int SPINNING_TICKS = 120;
+    public static final int RESULT_TICKS = 100;
+    /** Visible chips on the history line (matches DoublePersist.HISTORY_LINE). */
+    public static final int HISTORY_SIZE = DoublePersist.HISTORY_LINE;
     public static final long MIN_BET = 10L;
 
     private static DoubleGame INSTANCE;
@@ -35,7 +37,6 @@ public final class DoubleGame {
     private long roundId = 1L;
     private DoubleColor lastResult = DoubleColor.WHITE;
     private final Map<UUID, Bet> bets = new HashMap<>();
-    /** Newest first. */
     private final List<DoubleColor> history = new ArrayList<>();
     private final RandomSource random = RandomSource.create();
 
@@ -44,6 +45,10 @@ public final class DoubleGame {
 
     private DoubleGame(MinecraftServer server) {
         this.server = server;
+        DoublePersist persist = DoublePersist.get(server);
+        for (int ordinal : persist.historyView()) {
+            this.history.add(DoubleColor.byOrdinalSafe(ordinal));
+        }
     }
 
     public static void start(MinecraftServer server) {
@@ -60,7 +65,6 @@ public final class DoubleGame {
 
     public void tick() {
         if (--this.ticksLeft > 0) {
-            // Countdown sync ~1/s; clients animate locally between packets
             if (this.ticksLeft % 20 == 0) {
                 this.broadcast();
             }
@@ -81,20 +85,25 @@ public final class DoubleGame {
     }
 
     private void settle() {
+        DoublePersist persist = DoublePersist.get(this.server);
         for (Bet bet : new ArrayList<>(this.bets.values())) {
-            ServerPlayer player = this.server.getPlayerList().getPlayer(bet.playerId());
-            if (player == null) {
+            if (bet.color() != this.lastResult) {
                 continue;
             }
-            if (bet.color() == this.lastResult) {
-                long win = bet.amount() * (long) bet.color().multiplier();
+            long win = bet.amount() * (long) bet.color().multiplier();
+            ServerPlayer player = this.server.getPlayerList().getPlayer(bet.playerId());
+            if (player != null) {
                 PlayerBalance.add(player, win);
+            } else {
+                // Player left — keep the win until they rejoin.
+                persist.addPending(bet.playerId(), win);
             }
         }
         this.history.add(0, this.lastResult);
         while (this.history.size() > HISTORY_SIZE) {
             this.history.remove(this.history.size() - 1);
         }
+        persist.pushHistory(this.lastResult.ordinal());
         this.phase = Phase.RESULT;
         this.ticksLeft = RESULT_TICKS;
         this.broadcast();
@@ -137,6 +146,10 @@ public final class DoubleGame {
         this.bets.put(player.getUUID(), new Bet(player.getUUID(), player.getGameProfile().getName(), color, amount));
         this.broadcast();
         return true;
+    }
+
+    public boolean hasBet(UUID playerId) {
+        return this.bets.containsKey(playerId);
     }
 
     public void syncTo(ServerPlayer player) {

@@ -30,6 +30,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.registries.ForgeRegistries;
 
 public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
+    public static void clearSharedCatalog() {
+        // Price-table sync may invalidate craft prices; catalog rebuilt lazily.
+    }
+
     private enum SortMode {
         VALUE_DESC, VALUE_ASC, NAME
     }
