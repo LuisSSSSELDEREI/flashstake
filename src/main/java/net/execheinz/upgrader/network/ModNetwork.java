@@ -8,7 +8,7 @@ import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 
 public final class ModNetwork {
-    private static final String PROTOCOL = "11";
+    private static final String PROTOCOL = "15";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
         new ResourceLocation("flashstake", "main"),
         () -> PROTOCOL,
@@ -39,6 +39,13 @@ public final class ModNetwork {
         CHANNEL.messageBuilder(ClientboundDoubleStatePacket.class, id++, NetworkDirection.PLAY_TO_CLIENT).encoder(ClientboundDoubleStatePacket::encode).decoder(ClientboundDoubleStatePacket::decode).consumerMainThread(ClientboundDoubleStatePacket::handle).add();
         CHANNEL.messageBuilder(ClientboundDropFeedPacket.class, id++, NetworkDirection.PLAY_TO_CLIENT).encoder(ClientboundDropFeedPacket::encode).decoder(ClientboundDropFeedPacket::decode).consumerMainThread(ClientboundDropFeedPacket::handle).add();
         CHANNEL.messageBuilder(ClientboundMarketStatePacket.class, id++, NetworkDirection.PLAY_TO_CLIENT).encoder(ClientboundMarketStatePacket::encode).decoder(ClientboundMarketStatePacket::decode).consumerMainThread(ClientboundMarketStatePacket::handle).add();
+        CHANNEL.messageBuilder(ServerboundOpenArenaPacket.class, id++, NetworkDirection.PLAY_TO_SERVER).encoder(ServerboundOpenArenaPacket::encode).decoder(ServerboundOpenArenaPacket::decode).consumerMainThread(ServerboundOpenArenaPacket::handle).add();
+        CHANNEL.messageBuilder(ServerboundArenaActionPacket.class, id++, NetworkDirection.PLAY_TO_SERVER).encoder(ServerboundArenaActionPacket::encode).decoder(ServerboundArenaActionPacket::decode).consumerMainThread(ServerboundArenaActionPacket::handle).add();
+        CHANNEL.messageBuilder(ClientboundArenaLobbyPacket.class, id++, NetworkDirection.PLAY_TO_CLIENT).encoder(ClientboundArenaLobbyPacket::encode).decoder(ClientboundArenaLobbyPacket::decode).consumerMainThread(ClientboundArenaLobbyPacket::handle).add();
+        CHANNEL.messageBuilder(ClientboundBattleStatePacket.class, id++, NetworkDirection.PLAY_TO_CLIENT).encoder(ClientboundBattleStatePacket::encode).decoder(ClientboundBattleStatePacket::decode).consumerMainThread(ClientboundBattleStatePacket::handle).add();
+        CHANNEL.messageBuilder(ClientboundDuelStatePacket.class, id++, NetworkDirection.PLAY_TO_CLIENT).encoder(ClientboundDuelStatePacket::encode).decoder(ClientboundDuelStatePacket::decode).consumerMainThread(ClientboundDuelStatePacket::handle).add();
+        CHANNEL.messageBuilder(ClientboundContractResultPacket.class, id++, NetworkDirection.PLAY_TO_CLIENT).encoder(ClientboundContractResultPacket::encode).decoder(ClientboundContractResultPacket::decode).consumerMainThread(ClientboundContractResultPacket::handle).add();
+        CHANNEL.messageBuilder(ClientboundPriceTablePacket.class, id++, NetworkDirection.PLAY_TO_CLIENT).encoder(ClientboundPriceTablePacket::encode).decoder(ClientboundPriceTablePacket::decode).consumerMainThread(ClientboundPriceTablePacket::handle).add();
     }
 
     public static void sendTo(ServerPlayer player, Object message) {

@@ -51,9 +51,46 @@ public final class ItemValues {
     /** Hard floor — no item may be worth less than 1. */
     private static final double MIN_UNIT = 1.0;
     private static volatile Map<Item, Double> values;
+    /** Table pushed by the server; survives local invalidate() until logout. */
+    private static volatile Map<Item, Double> synced;
+    /** Recipe-less estimate, cached so remote clients don't recompute per item. */
+    private static volatile Map<Item, Double> fallback;
+    private static volatile List<Item> catalogCache;
 
     public static void invalidate() {
         values = null;
+        fallback = null;
+        catalogCache = null;
+    }
+
+    public static void applySynced(Map<Item, Double> table) {
+        synced = Map.copyOf(table);
+        fallback = null;
+        catalogCache = null;
+    }
+
+    public static void clearSynced() {
+        synced = null;
+        invalidate();
+    }
+
+    /** Snapshot for syncing to clients; computes with server recipes if needed. */
+    public static Map<Item, Double> snapshot(Level level) {
+        return ItemValues.table(level);
+    }
+
+    /** True once craft prices come from real recipes (local or server-synced). */
+    public static boolean isWarm() {
+        return values != null || synced != null;
+    }
+
+    /** Prefetch price table + catalog. */
+    public static void warmup(Level level) {
+        if (level == null) {
+            return;
+        }
+        ItemValues.table(level);
+        ItemValues.catalog(level);
     }
 
     public static boolean isBlacklisted(Item item) {
@@ -91,36 +128,69 @@ public final class ItemValues {
 
     public static List<Item> catalog(Level level) {
         Map<Item, Double> table = ItemValues.table(level);
-        ArrayList<Item> items = new ArrayList<Item>();
-        for (Item item : ForgeRegistries.ITEMS.getValues()) {
-            if (ItemValues.isBlacklisted(item)) continue;
-            items.add(item);
+        List<Item> cached = catalogCache;
+        if (cached != null) {
+            return cached;
         }
-        items.sort((a, b) -> {
-            int byValue = Double.compare(table.getOrDefault(a, ItemValues.rarityFallback(a)), table.getOrDefault(b, ItemValues.rarityFallback(b)));
-            if (byValue != 0) {
-                return byValue;
+        synchronized (ItemValues.class) {
+            cached = catalogCache;
+            if (cached != null) {
+                return cached;
             }
-            return String.valueOf(ForgeRegistries.ITEMS.getKey(a)).compareTo(String.valueOf(ForgeRegistries.ITEMS.getKey(b)));
-        });
-        return items;
+            ArrayList<Item> items = new ArrayList<>();
+            for (Item item : ForgeRegistries.ITEMS.getValues()) {
+                if (ItemValues.isBlacklisted(item)) {
+                    continue;
+                }
+                items.add(item);
+            }
+            items.sort((a, b) -> {
+                int byValue = Double.compare(
+                    table.getOrDefault(a, ItemValues.rarityFallback(a)),
+                    table.getOrDefault(b, ItemValues.rarityFallback(b)));
+                if (byValue != 0) {
+                    return byValue;
+                }
+                return String.valueOf(ForgeRegistries.ITEMS.getKey(a))
+                    .compareTo(String.valueOf(ForgeRegistries.ITEMS.getKey(b)));
+            });
+            if (ItemValues.isWarm()) {
+                catalogCache = List.copyOf(items);
+                return catalogCache;
+            }
+            return items;
+        }
     }
 
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     * Enabled force condition propagation
-     * Lifted jumps to return sites
-     */
     private static Map<Item, Double> table(Level level) {
         Map<Item, Double> local = values;
-        if (local != null) return local;
-        Class<ItemValues> clazz = ItemValues.class;
+        if (local != null) {
+            return local;
+        }
+        Map<Item, Double> remote = synced;
+        if (remote != null) {
+            return remote;
+        }
         synchronized (ItemValues.class) {
             local = values;
-            if (local != null) return local;
-            values = local = ItemValues.compute(level);
-            // ** MonitorExit[var2_2] (shouldn't be in output)
-            return local;
+            if (local != null) {
+                return local;
+            }
+            remote = synced;
+            if (remote != null) {
+                return remote;
+            }
+            Map<Item, Double> est = fallback;
+            if (est == null) {
+                est = ItemValues.compute(level);
+                // Prefer caching full craft graph on the server / integrated path.
+                if (level.getServer() != null) {
+                    values = est;
+                } else {
+                    fallback = est;
+                }
+            }
+            return est;
         }
     }
 

@@ -124,6 +124,7 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
     @Override
     protected void init() {
         super.init();
+        UiCursor.scheduleRestore();
         int x = this.leftPos;
         int y = this.topPos;
         this.backButton = this.addRenderableWidget(StyledButton.chip(x + 8, y + 6, 50, 16,
@@ -182,6 +183,7 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
             return;
         }
         if (this.mode == Mode.CASES) {
+            UiCursor.captureIfInFlashStakeUi();
             ModNetwork.sendToServer(new ServerboundOpenUpgraderPacket());
         } else {
             this.setMode(Mode.CASES);
@@ -423,8 +425,9 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        UiCursor.tickInRender();
         this.updateWidgetStates();
-        this.renderBackground(graphics);
+        graphics.fill(0, 0, this.width, this.height, 0xC0101010);
         super.render(graphics, mouseX, mouseY, partialTick);
         graphics.drawCenteredString(this.font,
             Component.translatable("gui.flashstake.market.balance", format(MarketScreen.getClientBalance())),
@@ -783,39 +786,79 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
 
     private void renderStash(GuiGraphics graphics, int mouseX, int mouseY) {
         graphics.drawCenteredString(this.font, Component.translatable("gui.flashstake.cases.stash_title"),
-            this.leftPos + this.imageWidth / 2, this.topPos + 60, -1643790);
+            this.leftPos + this.imageWidth / 2, this.topPos + 52, UiTheme.TEXT);
         graphics.drawCenteredString(this.font, Component.translatable("gui.flashstake.cases.stash_help"),
-            this.leftPos + this.imageWidth / 2, this.topPos + 74, -7892829);
+            this.leftPos + this.imageWidth / 2, this.topPos + 64, UiTheme.TEXT_DIM);
         long total = 0L;
         ItemStack hovered = null;
+        int cols = 9;
+        int cell = 18;
+        int gridW = cols * cell;
+        int startX = this.leftPos + (this.imageWidth - gridW) / 2;
+        int startY = this.topPos + 82;
+        int rows = (CaseStash.SLOTS + cols - 1) / cols;
         for (int i = 0; i < CaseStash.SLOTS; ++i) {
-            int x = this.leftPos + 60 + (i % 9) * 18;
-            int y = this.topPos + 100 + (i / 9) * 18;
+            int x = startX + (i % cols) * cell;
+            int y = startY + (i / cols) * cell;
             slot(graphics, x, y);
             ItemStack stack = i < clientStash.size() ? clientStash.get(i) : ItemStack.EMPTY;
             if (stack.isEmpty()) {
                 continue;
             }
             graphics.renderItem(stack, x + 1, y + 1);
-            graphics.renderItemDecorations(this.font, stack, x + 1, y + 1);
+            this.drawStackCount(graphics, stack, x + 1, y + 1);
             if (this.minecraft != null && this.minecraft.level != null) {
                 total += Math.round(ItemValues.stackValue(this.minecraft.level, stack));
             }
-            if (inBox(mouseX, mouseY, x, y, 18, 18)) {
+            if (inBox(mouseX, mouseY, x, y, cell, cell)) {
                 hovered = stack;
             }
         }
+        int valueY = startY + rows * cell + 6;
         graphics.drawCenteredString(this.font, Component.translatable("gui.flashstake.cases.stash_value", format(total)),
-            this.leftPos + this.imageWidth / 2, this.topPos + 170, -865972);
+            this.leftPos + this.imageWidth / 2, valueY, UiTheme.NEON_GOLD);
+        graphics.drawCenteredString(this.font,
+            Component.translatable("gui.flashstake.cases.stash_count",
+                this.filledStashSlots(), CaseStash.SLOTS),
+            this.leftPos + this.imageWidth / 2, valueY + 12, UiTheme.TEXT_MUTED);
         if (hovered != null && this.minecraft != null && this.minecraft.level != null) {
             long value = Math.round(ItemValues.stackValue(this.minecraft.level, hovered));
             graphics.renderComponentTooltip(this.font, List.of(
                 hovered.getHoverName(),
+                Component.literal("x" + hovered.getCount()).withStyle(ChatFormatting.GRAY),
                 Component.translatable("gui.flashstake.value", format(value)).withStyle(ChatFormatting.GOLD),
                 Component.translatable("gui.flashstake.cases.lmb_withdraw").withStyle(ChatFormatting.GRAY),
                 Component.translatable("gui.flashstake.cases.rmb_sell").withStyle(ChatFormatting.GRAY)
             ), mouseX, mouseY);
         }
+    }
+
+    private int filledStashSlots() {
+        int n = 0;
+        for (ItemStack stack : clientStash) {
+            if (!stack.isEmpty()) {
+                ++n;
+            }
+        }
+        return n;
+    }
+
+    /** Show counts above vanilla max (up to 999). */
+    private void drawStackCount(GuiGraphics graphics, ItemStack stack, int x, int y) {
+        int count = stack.getCount();
+        if (count <= 1) {
+            return;
+        }
+        String label = Integer.toString(count);
+        float scale = count >= 100 ? 0.7f : 0.8f;
+        graphics.pose().pushPose();
+        graphics.pose().translate(0, 0, 200);
+        graphics.pose().scale(scale, scale, 1.0f);
+        int tx = Math.round((x + 17) / scale) - this.font.width(label);
+        int ty = Math.round((y + 9) / scale);
+        graphics.drawString(this.font, label, tx + 1, ty + 1, 0xFF000000, false);
+        graphics.drawString(this.font, label, tx, ty, 0xFFFFFFFF, false);
+        graphics.pose().popPose();
     }
 
     @Override
@@ -862,10 +905,15 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
             // After spin: Keep/Sell buttons handle the drop — don't clear reels on click
             return true;
         } else if (this.mode == Mode.STASH) {
+            int cols = 9;
+            int cell = 18;
+            int gridW = cols * cell;
+            int startX = this.leftPos + (this.imageWidth - gridW) / 2;
+            int startY = this.topPos + 82;
             for (int i = 0; i < CaseStash.SLOTS; ++i) {
-                int x = this.leftPos + 60 + (i % 9) * 18;
-                int y = this.topPos + 100 + (i / 9) * 18;
-                if (!inBox(mx, my, x, y, 18, 18)) {
+                int x = startX + (i % cols) * cell;
+                int y = startY + (i / cols) * cell;
+                if (!inBox(mx, my, x, y, cell, cell)) {
                     continue;
                 }
                 ItemStack stack = i < clientStash.size() ? clientStash.get(i) : ItemStack.EMPTY;
