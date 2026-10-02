@@ -1,50 +1,29 @@
 # FlashStake
 
-Мод экономики для Minecraft Forge: апгрейд предметов, маркет, кейсы, дабл и арена.
+Мод для Minecraft: апгрейд предметов, маркет, кейсы, дабл и арена.
 
-## Возможности
+Открыть меню в игре — клавиша **U**.
 
-- **Апгрейд** — колесо шанса, выбор цели, быстрый спин
-- **Маркет** — покупка/продажа с лимитом 100 предметов / 10 минут
-- **Кейсы** — открытие, stash, лента дропов
-- **Дабл** — ставки на цвет
-- **Арена** — баттл кейсов, контракты, дуэли (PvP, без ботов)
+## Скачать
 
-Открытие меню: клавиша **U** (настраивается).
+Выбери свою версию Minecraft и нажми на ссылку:
 
-## Версии Minecraft
+- [Скачать для 1.21.4](https://github.com/LuisSSSSELDEREI/flashstake/releases/download/v1.1.7-1.21.4/flashstake-1.21.4-1.1.7.jar)
+- [Скачать для 1.21.1](https://github.com/LuisSSSSELDEREI/flashstake/releases/download/v1.1.5-1.21.1/flashstake-1.21.1-1.1.5.jar)
+- [Скачать для 1.20.4](https://github.com/LuisSSSSELDEREI/flashstake/releases/download/v1.1.7-1.20.4/flashstake-1.20.4-1.1.7.jar)
+- [Скачать для 1.20.1](https://github.com/LuisSSSSELDEREI/flashstake/releases/download/v1.1.7-1.20.1/flashstake-1.20.1-1.1.7.jar)
+- [Скачать для 1.19.2](https://github.com/LuisSSSSELDEREI/flashstake/releases/download/v1.1.6-1.19.2/flashstake-1.19.2-1.1.6.jar)
 
-Каждая версия Minecraft — **отдельная ветка** и отдельный jar. Один jar не работает на нескольких MC.
+## Как поставить
 
-| MC | Ветка | Release | Jar | Java |
-|---|---|---|---|---|
-| **1.19.2** | [`1.19.2`](https://github.com/LuisSSSSELDEREI/flashstake/tree/1.19.2) | [v1.1.6-1.19.2](https://github.com/LuisSSSSELDEREI/flashstake/releases/tag/v1.1.6-1.19.2) | `flashstake-1.19.2-1.1.6.jar` | 17 |
-| **1.20.1** | [`1.20.1`](https://github.com/LuisSSSSELDEREI/flashstake/tree/1.20.1) | [v1.1.7-1.20.1](https://github.com/LuisSSSSELDEREI/flashstake/releases/tag/v1.1.7-1.20.1) | `flashstake-1.20.1-1.1.7.jar` | 17 |
-| **1.20.4** | [`1.20.4`](https://github.com/LuisSSSSELDEREI/flashstake/tree/1.20.4) | [v1.1.7-1.20.4](https://github.com/LuisSSSSELDEREI/flashstake/releases/tag/v1.1.7-1.20.4) | `flashstake-1.20.4-1.1.7.jar` | 17 |
-| **1.21.1** | [`1.21.1`](https://github.com/LuisSSSSELDEREI/flashstake/tree/1.21.1) | [v1.1.5-1.21.1](https://github.com/LuisSSSSELDEREI/flashstake/releases/tag/v1.1.5-1.21.1) | `flashstake-1.21.1-1.1.5.jar` | 21 |
-| **1.21.4** | [`1.21.4`](https://github.com/LuisSSSSELDEREI/flashstake/tree/1.21.4) | [v1.1.7-1.21.4](https://github.com/LuisSSSSELDEREI/flashstake/releases/tag/v1.1.7-1.21.4) | `flashstake-1.21.4-1.1.7.jar` | 21 |
+1. Нужен **Forge** той же версии Minecraft.
+2. Положи скачанный `.jar` в папку `mods`.
+3. Запусти игру.
 
-Все релизы: https://github.com/LuisSSSSELDEREI/flashstake/releases
+## Telegram
 
-## Сборка
-
-- Ветки `1.19.2` / `1.20.1` / `1.20.4` — **JDK 17**
-- Ветки `1.21.1` / `1.21.4` — **JDK 21**
-
-```bat
-gradlew.bat build
-```
-
-Готовый jar: `build/libs/flashstake-<mc>-<mod>.jar`
-
-## Установка
-
-Положить jar в папку `mods` клиента и сервера (Forge той же версии Minecraft, что указана в имени jar).
+Новости и обновления: [t.me/flashstakemod](https://t.me/flashstakemod)
 
 ## Авторы
 
 flashlight and luis
-
-## Лицензия
-
-All Rights Reserved
