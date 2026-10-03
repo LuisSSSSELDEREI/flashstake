@@ -4,7 +4,7 @@
 
 Открыть меню в игре — клавиша **U**.
 
-## Скачать
+## Скачать Forge
 
 Выбери свою версию Minecraft и нажми на ссылку:
 
@@ -14,11 +14,13 @@
 - [Скачать для 1.20.1](https://github.com/LuisSSSSELDEREI/flashstake/releases/download/v1.1.7-1.20.1/flashstake-1.20.1-1.1.7.jar)
 - [Скачать для 1.19.2](https://github.com/LuisSSSSELDEREI/flashstake/releases/download/v1.1.6-1.19.2/flashstake-1.19.2-1.1.6.jar)
 
-## Как поставить
+Нужен **Forge** той же версии. Положи `.jar` в папку `mods`.
 
-1. Нужен **Forge** той же версии Minecraft.
-2. Положи скачанный `.jar` в папку `mods`.
-3. Запусти игру.
+## Скачать Fabric 1.21.4
+
+- [Скачать Fabric для 1.21.4](https://github.com/LuisSSSSELDEREI/flashstake/releases/download/v1.1.7-fabric-1.21.4/flashstake-fabric-1.21.4-1.1.7-fabric.jar)
+
+Нужны **Fabric Loader** + [Fabric API](https://modrinth.com/mod/fabric-api). Forge и Fabric на одном сервере вместе не работают.
 
 ## Telegram
 
