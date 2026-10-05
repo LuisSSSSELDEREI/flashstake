@@ -36,9 +36,9 @@ public final class BaseValues {
     }
 
     static {
-        // Cobble / filler stone — must be ≥ 6×slab (1 block → 6 slabs), else craft prints money
+        // Cobble / filler stone - must be в‰Ґ 6Г—slab (1 block в†’ 6 slabs), else craft prints money
         BaseValues.put(1.0, Items.DIRT, Items.SAND, Items.RED_SAND, Items.GRAVEL, Items.NETHERRACK, Items.END_STONE, Items.TUFF, Items.CALCITE, Items.BASALT, Items.SNOWBALL, Items.WHEAT_SEEDS, Items.KELP);
-        // Cobble — easy to mine; ≥2 so 3 cobble → 6 slabs @1 don't print
+        // Cobble - easy to mine; в‰Ґ2 so 3 cobble в†’ 6 slabs @1 don't print
         BaseValues.put(2.0, Items.COBBLESTONE, Items.COBBLED_DEEPSLATE);
         BaseValues.put(4.0, Items.GRANITE, Items.DIORITE, Items.ANDESITE, Items.BLACKSTONE);
         // Very cheap / freely farmable foliage & filler (floor = 1)
@@ -61,13 +61,13 @@ public final class BaseValues {
             Items.CRIMSON_ROOTS, Items.WARPED_ROOTS, Items.NETHER_SPROUTS, Items.WEEPING_VINES, Items.TWISTING_VINES,
             Items.SNOW, Items.ICE, Items.PACKED_ICE, Items.BLUE_ICE, Items.CLAY, Items.SNOW_BLOCK
         );
-        // Stone family — above cobble; still ≥ 6×slab
+        // Stone family - above cobble; still в‰Ґ 6Г—slab
         BaseValues.put(8.0, Items.STONE, Items.DEEPSLATE, Items.CACTUS, Items.SOUL_SAND, Items.SOUL_SOIL, Items.CLAY_BALL, Items.MOSS_BLOCK);
-        // Obsidian is mid-game (diamond pick) — not dirt-tier
+        // Obsidian is mid-game (diamond pick) - not dirt-tier
         BaseValues.put(40.0, Items.OBSIDIAN);
         BaseValues.put(80.0, Items.CRYING_OBSIDIAN);
         BaseValues.put(500.0, Items.RESPAWN_ANCHOR);
-        // 1 log = 4 planks; 3 planks → 6 slabs ⇒ plank ≥ 2×slab, log ≥ 8×slab
+        // 1 log = 4 planks; 3 planks в†’ 6 slabs в‡’ plank в‰Ґ 2Г—slab, log в‰Ґ 8Г—slab
         BaseValues.put(8.0,
             Items.OAK_LOG, Items.SPRUCE_LOG, Items.BIRCH_LOG, Items.JUNGLE_LOG, Items.ACACIA_LOG, Items.DARK_OAK_LOG,
             Items.MANGROVE_LOG, Items.CHERRY_LOG, Items.CRIMSON_STEM, Items.WARPED_STEM,
@@ -85,21 +85,28 @@ public final class BaseValues {
             Items.DARK_OAK_PLANKS, Items.MANGROVE_PLANKS, Items.CHERRY_PLANKS, Items.BAMBOO_PLANKS,
             Items.CRIMSON_PLANKS, Items.WARPED_PLANKS
         );
-        // Bamboo block → 2 planks
+        // Bamboo block в†’ 2 planks
         BaseValues.put(4.0, Items.BAMBOO_BLOCK, Items.STRIPPED_BAMBOO_BLOCK);
         // Slabs: priced as half of block in ItemValues.enforceBlockFamilyPricing (not flat 1)
         BaseValues.put(3.0, Items.WHEAT, Items.POTATO, Items.CARROT, Items.BEETROOT, Items.APPLE, Items.EGG);
-        BaseValues.put(6.0, Items.PORKCHOP, Items.BEEF, Items.CHICKEN, Items.MUTTON, Items.COD, Items.SALMON);
+        BaseValues.put(6.0, Items.PORKCHOP, Items.BEEF, Items.CHICKEN, Items.MUTTON, Items.COD, Items.SALMON, Items.RABBIT);
+        // Cooked slightly above raw (was falling to 1); small premium only.
+        BaseValues.put(8.0, Items.COOKED_PORKCHOP, Items.COOKED_BEEF, Items.COOKED_CHICKEN, Items.COOKED_MUTTON, Items.COOKED_COD, Items.COOKED_SALMON, Items.COOKED_RABBIT);
+        BaseValues.put(5.0, Items.BAKED_POTATO);
+
         BaseValues.put(30.0, Items.HONEYCOMB, Items.PUFFERFISH, Items.CHORUS_FRUIT);
         BaseValues.put(4.0, Items.STRING, Items.FEATHER, Items.BONE, Items.ROTTEN_FLESH, Items.SPIDER_EYE, Items.INK_SAC, Items.COBWEB);
         BaseValues.put(12.0, Items.LEATHER, Items.SLIME_BALL, Items.RABBIT_HIDE, Items.PRISMARINE_SHARD, Items.PRISMARINE_CRYSTALS);
-        BaseValues.put(20.0, Items.GUNPOWDER, Items.MAGMA_CREAM, Items.GLOW_INK_SAC);
+        BaseValues.put(20.0, Items.GUNPOWDER, Items.GLOW_INK_SAC);
+        // Magma: nether-mined block is cheap; cream from cubes (~4). Was 20 and inflated MAGMA_BLOCK via 4x craft.
+        BaseValues.put(4.0, Items.MAGMA_CREAM);
+        BaseValues.put(3.0, Items.MAGMA_BLOCK);
         BaseValues.put(50.0, Items.ENDER_PEARL, Items.BLAZE_ROD, Items.PHANTOM_MEMBRANE, Items.NAUTILUS_SHELL);
-        // Eye = pearl + blaze powder (~75). Tear must be ≥ crystal − eye − glass or crystal craft is free money.
+        // Eye = pearl + blaze powder (~75). Tear must be в‰Ґ crystal в€’ eye в€’ glass or crystal craft is free money.
         BaseValues.put(75.0, Items.ENDER_EYE);
         BaseValues.put(400.0, Items.GHAST_TEAR);
         BaseValues.put(120.0, Items.RABBIT_FOOT);
-        // End-game storage — must be pinned or undyed/coloured boxes fall to ~1
+        // End-game storage - must be pinned or undyed/coloured boxes fall to ~1
         BaseValues.put(350.0, Items.SHULKER_SHELL);
         BaseValues.put(750.0,
             Items.SHULKER_BOX,
@@ -113,10 +120,17 @@ public final class BaseValues {
         BaseValues.put(100.0, Items.TNT);
         BaseValues.put(18.0, Items.FIRE_CHARGE);
         BaseValues.put(400.0, Items.END_CRYSTAL);
-        BaseValues.put(900.0, Items.CONDUIT, Items.WITHER_SKELETON_SKULL);
+        BaseValues.put(900.0, Items.CONDUIT);
+        // Wither skulls gate nether star / wither — raise vs farmable drops
+        BaseValues.put(2200.0, Items.WITHER_SKELETON_SKULL);
         BaseValues.put(500.0, Items.GOLDEN_APPLE);
         BaseValues.put(4800.0, Items.NETHERITE_INGOT);
         BaseValues.put(360.0, Items.IRON_BLOCK);
+        // Anvil = 3 iron blocks + 4 ingots (=1240). Chipped/damaged have no craft -> were rarityFallback=1
+        BaseValues.put(1240.0, Items.ANVIL);
+        BaseValues.put(900.0, Items.CHIPPED_ANVIL);
+        BaseValues.put(600.0, Items.DAMAGED_ANVIL);
+
         BaseValues.put(540.0, Items.GOLD_BLOCK);
         BaseValues.put(1260.0, Items.EMERALD_BLOCK);
         BaseValues.put(3600.0, Items.DIAMOND_BLOCK);
@@ -139,14 +153,14 @@ public final class BaseValues {
         BaseValues.put(8.0, Items.REDSTONE, Items.GLOWSTONE_DUST);
         BaseValues.put(10.0, Items.LAPIS_LAZULI, Items.RAW_COPPER);
         BaseValues.put(12.0, Items.COPPER_INGOT, Items.QUARTZ, Items.AMETHYST_SHARD);
-        // Ore sell ≥ drop count × drop value (buy ore → mine → sell print)
+        // Ore sell в‰Ґ drop count Г— drop value (buy ore в†’ mine в†’ sell print)
         BaseValues.put(70.0, Items.REDSTONE_ORE, Items.DEEPSLATE_REDSTONE_ORE);
         BaseValues.put(90.0, Items.LAPIS_ORE, Items.DEEPSLATE_LAPIS_ORE);
-        // Copper ore drops ~2–5 raw copper (10 each) — pin ≥ 5×raw
+        // Copper ore drops ~2-5 raw copper (10 each) - pin в‰Ґ 5Г—raw
         BaseValues.put(50.0, Items.COPPER_ORE, Items.DEEPSLATE_COPPER_ORE);
         BaseValues.put(35.0, Items.RAW_IRON);
         BaseValues.put(40.0, Items.IRON_INGOT);
-        // Empty bucket ≈ 3×iron; filled must be ≥ empty or pour→sell prints
+        // Empty bucket в‰€ 3Г—iron; filled must be в‰Ґ empty or pourв†’sell prints
         BaseValues.put(120.0, Items.BUCKET);
         BaseValues.put(125.0,
             Items.WATER_BUCKET, Items.LAVA_BUCKET, Items.POWDER_SNOW_BUCKET, Items.MILK_BUCKET,
@@ -158,17 +172,40 @@ public final class BaseValues {
         BaseValues.put(140.0, Items.EMERALD);
         BaseValues.put(400.0, Items.DIAMOND);
         BaseValues.put(1200.0, Items.ANCIENT_DEBRIS, Items.NETHERITE_SCRAP);
-        // Echo / recovery — was too juicy in mystery case & market
+        // Echo / recovery - was too juicy in mystery case & market
         BaseValues.put(80.0, Items.ECHO_SHARD);
         BaseValues.put(120.0, Items.RECOVERY_COMPASS);
         BaseValues.put(300.0, Items.HEART_OF_THE_SEA, Items.SPONGE);
         BaseValues.put(600.0, Items.SADDLE, Items.NAME_TAG);
-        // Horse armor is uncraftable (except leather) — without pins it falls to rarityFallback=1
+        // Pottery sherds: easy dig sites — cut below rarityFallback (was ~150)
+        BaseValues.put(40.0,
+            Items.ANGLER_POTTERY_SHERD,
+            Items.ARCHER_POTTERY_SHERD,
+            Items.ARMS_UP_POTTERY_SHERD,
+            Items.BLADE_POTTERY_SHERD,
+            Items.BREWER_POTTERY_SHERD,
+            Items.BURN_POTTERY_SHERD,
+            Items.DANGER_POTTERY_SHERD,
+            Items.EXPLORER_POTTERY_SHERD,
+            Items.FRIEND_POTTERY_SHERD,
+            Items.HEART_POTTERY_SHERD,
+            Items.HEARTBREAK_POTTERY_SHERD,
+            Items.HOWL_POTTERY_SHERD,
+            Items.MINER_POTTERY_SHERD,
+            Items.MOURNER_POTTERY_SHERD,
+            Items.PLENTY_POTTERY_SHERD,
+            Items.PRIZE_POTTERY_SHERD,
+            Items.SHEAF_POTTERY_SHERD,
+            Items.SHELTER_POTTERY_SHERD,
+            Items.SKULL_POTTERY_SHERD,
+            Items.SNORT_POTTERY_SHERD
+        );
+        // Horse armor is uncraftable (except leather) - without pins it falls to rarityFallback=1
         BaseValues.put(80.0, Items.LEATHER_HORSE_ARMOR);
         BaseValues.put(250.0, Items.IRON_HORSE_ARMOR);
         BaseValues.put(400.0, Items.GOLDEN_HORSE_ARMOR);
         BaseValues.put(1200.0, Items.DIAMOND_HORSE_ARMOR);
-        // Template dupe: 1 template + diamond + mat → 2 templates ⇒ V ≤ diamond+mat ≈ 401
+        // Template dupe: 1 template + diamond + mat в†’ 2 templates в‡’ V в‰¤ diamond+mat в‰€ 401
         BaseValues.put(400.0, Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE);
         BaseValues.put(50.0,
             Items.SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE, Items.DUNE_ARMOR_TRIM_SMITHING_TEMPLATE,
@@ -185,7 +222,7 @@ public final class BaseValues {
             Items.MOJANG_BANNER_PATTERN, Items.GLOBE_BANNER_PATTERN, Items.PIGLIN_BANNER_PATTERN
         );
         BaseValues.put(5.0, Items.MAP);
-        // Glass: sand=1 → smelt print if glass stays ~1
+        // Glass: sand=1 в†’ smelt print if glass stays ~1
         BaseValues.put(6.0,
             Items.GLASS,
             Items.WHITE_STAINED_GLASS, Items.ORANGE_STAINED_GLASS, Items.MAGENTA_STAINED_GLASS,
@@ -203,13 +240,13 @@ public final class BaseValues {
             Items.CYAN_STAINED_GLASS_PANE, Items.PURPLE_STAINED_GLASS_PANE, Items.BLUE_STAINED_GLASS_PANE,
             Items.BROWN_STAINED_GLASS_PANE, Items.GREEN_STAINED_GLASS_PANE, Items.RED_STAINED_GLASS_PANE, Items.BLACK_STAINED_GLASS_PANE
         );
-        // Melon block → 3–7 slices; pumpkin → 4 seeds
+        // Melon block в†’ 3-7 slices; pumpkin в†’ 4 seeds
         BaseValues.put(2.0, Items.MELON_SLICE);
         BaseValues.put(20.0, Items.MELON);
         BaseValues.put(10.0, Items.PUMPKIN);
         BaseValues.put(5.0, Items.CARVED_PUMPKIN);
         BaseValues.put(1.0, Items.PUMPKIN_SEEDS, Items.MELON_SEEDS);
-        // Music: 9×fragment → disc_5; pin both so rarity-fallback (600) can't print
+        // Music: 9Г—fragment в†’ disc_5; pin both so rarity-fallback (600) can't print
         BaseValues.put(10.0, Items.DISC_FRAGMENT_5);
         BaseValues.put(90.0,
             Items.MUSIC_DISC_13, Items.MUSIC_DISC_CAT, Items.MUSIC_DISC_BLOCKS, Items.MUSIC_DISC_CHIRP,
@@ -245,7 +282,7 @@ public final class BaseValues {
         BLACKLIST.add(Items.REINFORCED_DEEPSLATE);
         BLACKLIST.add(Items.PETRIFIED_OAK_SLAB);
         BLACKLIST.add(Items.FARMLAND);
-        // DIRTB_PATH removed from blacklist — priced cheap above
+        // DIRTB_PATH removed from blacklist - priced cheap above
         BLACKLIST.add(Items.INFESTED_STONE);
         BLACKLIST.add(Items.INFESTED_COBBLESTONE);
         BLACKLIST.add(Items.INFESTED_DEEPSLATE);

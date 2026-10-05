@@ -719,29 +719,22 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
             this.leftPos + 10, this.topPos + 112, -7892829, false);
         ArrayList<CaseDefinition.CaseEntry> sorted = new ArrayList<>(def.pool());
         sorted.sort((a, b) -> Integer.compare(b.tier().ordinal(), a.tier().ordinal()));
-        int n = Math.min(sorted.size(), 24);
+        int n = Math.min(sorted.size(), 36);
         if (n <= 0) {
             return;
         }
         int pad = 10;
         int gap = 3;
         int inner = this.imageWidth - pad * 2;
-        int maxCols = Math.max(1, (inner + gap) / (20 + gap));
-        int cols = Math.min(n, maxCols);
-        int bestEmpty = Integer.MAX_VALUE;
-        for (int c = 1; c <= Math.min(n, maxCols); ++c) {
-            int last = n % c == 0 ? c : n % c;
-            int empty = c - last;
-            if (empty < bestEmpty || (empty == bestEmpty && c > cols)) {
-                bestEmpty = empty;
-                cols = c;
-            }
-        }
-        int cell = (inner - (cols - 1) * gap) / cols;
-        cell = Math.max(20, cell);
+        // Fixed cell size: old "minimize empty" picker chose cols=1 for prime pool sizes
+        // (e.g. farm=19) and stretched one slot across the whole panel.
+        final int cell = 22;
+        int cols = Math.max(1, Math.min(n, (inner + gap) / (cell + gap)));
         int used = cols * cell + (cols - 1) * gap;
         int startX = this.leftPos + pad + Math.max(0, (inner - used) / 2);
         int startY = this.topPos + 120;
+        CaseDefinition.CaseEntry hoveredPreview = null;
+        ItemStack hoveredPreviewStack = null;
         for (int i = 0; i < n; ++i) {
             CaseDefinition.CaseEntry entry = sorted.get(i);
             int x = startX + (i % cols) * (cell + gap);
@@ -755,15 +748,20 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
             int iy = y + (cell - 16) / 2 - 1;
             graphics.renderItem(stack, ix, iy);
             graphics.renderItemDecorations(this.font, stack, ix, iy);
-            if (!over || this.minecraft == null || this.minecraft.level == null) {
-                continue;
+            if (over) {
+                hoveredPreview = entry;
+                hoveredPreviewStack = stack;
             }
-            double chance = CaseLoot.chancePercent(this.minecraft.level, def, entry);
-            long value = Math.round(ItemValues.stackValue(this.minecraft.level, stack));
+        }
+
+        if (hoveredPreview != null && hoveredPreviewStack != null
+                && this.minecraft != null && this.minecraft.level != null) {
+            double chance = CaseLoot.chancePercent(this.minecraft.level, def, hoveredPreview);
+            long value = Math.round(ItemValues.stackValue(this.minecraft.level, hoveredPreviewStack));
             graphics.renderComponentTooltip(this.font, List.of(
-                stack.getHoverName(),
-                Component.translatable("gui.flashstake.cases.tier." + entry.tier().name().toLowerCase(Locale.ROOT))
-                    .withStyle(tierStyle(entry.tier())),
+                hoveredPreviewStack.getHoverName(),
+                Component.translatable("gui.flashstake.cases.tier." + hoveredPreview.tier().name().toLowerCase(Locale.ROOT))
+                    .withStyle(tierStyle(hoveredPreview.tier())),
                 Component.translatable("gui.flashstake.value", format(value)).withStyle(ChatFormatting.GOLD),
                 Component.translatable("gui.flashstake.cases.drop_chance", String.format(Locale.ROOT, "%.2f%%", chance))
                     .withStyle(ChatFormatting.GRAY)
