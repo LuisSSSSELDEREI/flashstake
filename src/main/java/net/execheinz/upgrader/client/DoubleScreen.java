@@ -196,12 +196,58 @@ public class DoubleScreen extends AbstractContainerScreen<DoubleMenu> {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         UiCursor.tickInRender();
         graphics.fill(0, 0, this.width, this.height, 0xC0101010);
-        super.render(graphics, mouseX, mouseY, partialTick);
-        UiText.drawCentered(graphics, this.font,
-            Component.translatable("gui.flashstake.market.balance", format(MarketScreen.getClientBalance())),
-            this.leftPos + this.imageWidth - 70, this.topPos + 10, UiTheme.NEON_GOLD, 1.05f);
-        this.renderTooltip(graphics, mouseX, mouseY);
+        float fit = this.fitScale();
+        int mx = UiFit.mouseXi(mouseX, this.leftPos, this.imageWidth, fit);
+        int my = UiFit.mouseYi(mouseY, this.topPos, this.imageHeight, fit);
+        UiFit.push(graphics, this.leftPos, this.topPos, this.imageWidth, this.imageHeight, fit);
+        try {
+            super.render(graphics, mx, my, partialTick);
+            UiText.drawCentered(graphics, this.font,
+                Component.translatable("gui.flashstake.market.balance", format(MarketScreen.getClientBalance())),
+                this.leftPos + this.imageWidth - 70, this.topPos + 10, UiTheme.NEON_GOLD, 1.05f);
+            this.renderTooltip(graphics, mx, my);
+        } finally {
+            UiFit.pop(graphics, fit);
+        }
     }
+
+    private float fitScale() {
+        return UiFit.scale(this.imageWidth, this.imageHeight, this.width, this.height);
+    }
+
+    private double fitX(double mouseX) {
+        return UiFit.mouseX(mouseX, this.leftPos, this.imageWidth, this.fitScale());
+    }
+
+    private double fitY(double mouseY) {
+        return UiFit.mouseY(mouseY, this.topPos, this.imageHeight, this.fitScale());
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        return super.mouseClicked(this.fitX(mouseX), this.fitY(mouseY), button);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        return super.mouseReleased(this.fitX(mouseX), this.fitY(mouseY), button);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        float fit = this.fitScale();
+        return super.mouseDragged(
+            UiFit.mouseX(mouseX, this.leftPos, this.imageWidth, fit),
+            UiFit.mouseY(mouseY, this.topPos, this.imageHeight, fit),
+            button, UiFit.delta(dragX, fit), UiFit.delta(dragY, fit));
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        return super.mouseScrolled(this.fitX(mouseX), this.fitY(mouseY), scrollX, scrollY);
+    }
+
+
 
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
@@ -227,21 +273,21 @@ public class DoubleScreen extends AbstractContainerScreen<DoubleMenu> {
 
         DoubleColor last = DoubleColor.byOrdinalSafe(clientResult);
         if (clientPhase == DoubleGame.Phase.RESULT.ordinal()) {
-            UiText.drawShadow(graphics, this.font,
+            UiText.draw(graphics, this.font,
                 Component.translatable("gui.flashstake.double.last",
                     Component.translatable("gui.flashstake.double.color." + last.name().toLowerCase(Locale.ROOT), last.multiplier())),
                 x + 16, y + 130, last.argb(), 1.08f);
         } else if (clientPhase == DoubleGame.Phase.SPINNING.ordinal()) {
-            UiText.drawShadow(graphics, this.font, Component.translatable("gui.flashstake.double.spinning"),
+            UiText.draw(graphics, this.font, Component.translatable("gui.flashstake.double.spinning"),
                 x + 16, y + 130, UiTheme.TEXT_DIM, 1.05f);
         } else {
-            UiText.drawShadow(graphics, this.font,
+            UiText.draw(graphics, this.font,
                 Component.translatable("gui.flashstake.double.prev",
                     Component.translatable("gui.flashstake.double.color." + last.name().toLowerCase(Locale.ROOT), last.multiplier())),
                 x + 16, y + 130, UiTheme.TEXT_MUTED, 1.0f);
         }
 
-        UiText.drawShadow(graphics, this.font, Component.translatable("gui.flashstake.double.players"),
+        UiText.draw(graphics, this.font, Component.translatable("gui.flashstake.double.players"),
             x + 16, y + 236, UiTheme.TEXT_DIM, 1.0f);
         int row = 0;
         for (ClientboundDoubleStatePacket.BetView bet : clientBets) {
@@ -252,12 +298,12 @@ public class DoubleScreen extends AbstractContainerScreen<DoubleMenu> {
             String line = bet.playerName() + " · " + format(bet.amount()) + " → ×" + c.multiplier();
             int col = row / 2;
             int local = row % 2;
-            UiText.drawShadow(graphics, this.font, Component.literal(line),
+            UiText.draw(graphics, this.font, Component.literal(line),
                 x + 16 + col * 180, y + 250 + local * 12, c.argb(), 1.0f);
             row++;
         }
         if (clientBets.isEmpty()) {
-            UiText.drawShadow(graphics, this.font, Component.translatable("gui.flashstake.double.no_bets"),
+            UiText.draw(graphics, this.font, Component.translatable("gui.flashstake.double.no_bets"),
                 x + 16, y + 250, UiTheme.TEXT_MUTED, 1.0f);
         }
 
@@ -274,7 +320,7 @@ public class DoubleScreen extends AbstractContainerScreen<DoubleMenu> {
 
     /** Newest on the left — only chips that fit on the line; older are dropped from view. */
     private void renderHistory(GuiGraphics graphics, int hx, int hy) {
-        UiText.drawShadow(graphics, this.font, Component.translatable("gui.flashstake.double.history"),
+        UiText.draw(graphics, this.font, Component.translatable("gui.flashstake.double.history"),
             hx, hy, UiTheme.TEXT_DIM, 1.0f);
         int startX = hx;
         int startY = hy + 12;
@@ -286,7 +332,7 @@ public class DoubleScreen extends AbstractContainerScreen<DoubleMenu> {
         graphics.fill(startX, startY + HIST_CHIP + 2, lineRight, startY + HIST_CHIP + 3, 0x552A3858);
 
         if (clientHistory.isEmpty()) {
-            UiText.drawShadow(graphics, this.font, Component.translatable("gui.flashstake.double.history_empty"),
+            UiText.draw(graphics, this.font, Component.translatable("gui.flashstake.double.history_empty"),
                 startX, startY + 2, UiTheme.TEXT_MUTED, 0.95f);
             return;
         }

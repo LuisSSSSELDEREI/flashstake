@@ -33,7 +33,9 @@ public final class UiText {
     }
 
     public static void drawCenteredRaw(GuiGraphics g, Font font, String text, int cx, int y, int color, float scale) {
-        drawCentered(g, font, Component.literal(text), cx, y, color, scale);
+        // Flat digits like 1.19.2 Double (no drop shadow)
+        int w = Math.round(font.width(text) * scale);
+        draw(g, font, Component.literal(text), cx - w / 2, y, color, scale);
     }
 
     public static String ellipsize(Font font, String text, int maxPx) {

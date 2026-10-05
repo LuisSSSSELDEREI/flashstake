@@ -89,11 +89,18 @@ public final class BaseValues {
         BaseValues.put(4.0, Items.BAMBOO_BLOCK, Items.STRIPPED_BAMBOO_BLOCK);
         // Slabs: priced as half of block in ItemValues.enforceBlockFamilyPricing (not flat 1)
         BaseValues.put(3.0, Items.WHEAT, Items.POTATO, Items.CARROT, Items.BEETROOT, Items.APPLE, Items.EGG);
-        BaseValues.put(6.0, Items.PORKCHOP, Items.BEEF, Items.CHICKEN, Items.MUTTON, Items.COD, Items.SALMON);
+        BaseValues.put(6.0, Items.PORKCHOP, Items.BEEF, Items.CHICKEN, Items.MUTTON, Items.COD, Items.SALMON, Items.RABBIT);
+        // Cooked slightly above raw (was falling to 1); small premium only.
+        BaseValues.put(8.0, Items.COOKED_PORKCHOP, Items.COOKED_BEEF, Items.COOKED_CHICKEN, Items.COOKED_MUTTON, Items.COOKED_COD, Items.COOKED_SALMON, Items.COOKED_RABBIT);
+        BaseValues.put(5.0, Items.BAKED_POTATO);
+
         BaseValues.put(30.0, Items.HONEYCOMB, Items.PUFFERFISH, Items.CHORUS_FRUIT);
         BaseValues.put(4.0, Items.STRING, Items.FEATHER, Items.BONE, Items.ROTTEN_FLESH, Items.SPIDER_EYE, Items.INK_SAC, Items.COBWEB);
         BaseValues.put(12.0, Items.LEATHER, Items.SLIME_BALL, Items.RABBIT_HIDE, Items.PRISMARINE_SHARD, Items.PRISMARINE_CRYSTALS);
-        BaseValues.put(20.0, Items.GUNPOWDER, Items.MAGMA_CREAM, Items.GLOW_INK_SAC);
+        BaseValues.put(20.0, Items.GUNPOWDER, Items.GLOW_INK_SAC);
+        // Magma: nether-mined block is cheap; cream from cubes (~4). Was 20 and inflated MAGMA_BLOCK via 4x craft.
+        BaseValues.put(4.0, Items.MAGMA_CREAM);
+        BaseValues.put(3.0, Items.MAGMA_BLOCK);
         BaseValues.put(50.0, Items.ENDER_PEARL, Items.BLAZE_ROD, Items.PHANTOM_MEMBRANE, Items.NAUTILUS_SHELL);
         // Eye = pearl + blaze powder (~75). Tear must be     crystal     eye     glass or crystal craft is free money.
         BaseValues.put(75.0, Items.ENDER_EYE);
@@ -113,10 +120,17 @@ public final class BaseValues {
         BaseValues.put(100.0, Items.TNT);
         BaseValues.put(18.0, Items.FIRE_CHARGE);
         BaseValues.put(400.0, Items.END_CRYSTAL);
-        BaseValues.put(900.0, Items.CONDUIT, Items.WITHER_SKELETON_SKULL);
+        BaseValues.put(900.0, Items.CONDUIT);
+        // Wither skulls gate nether star / wither — raise vs farmable drops
+        BaseValues.put(2200.0, Items.WITHER_SKELETON_SKULL);
         BaseValues.put(500.0, Items.GOLDEN_APPLE);
         BaseValues.put(4800.0, Items.NETHERITE_INGOT);
         BaseValues.put(360.0, Items.IRON_BLOCK);
+        // Anvil = 3 iron blocks + 4 ingots (=1240). Chipped/damaged have no craft -> were rarityFallback=1
+        BaseValues.put(1240.0, Items.ANVIL);
+        BaseValues.put(900.0, Items.CHIPPED_ANVIL);
+        BaseValues.put(600.0, Items.DAMAGED_ANVIL);
+
         BaseValues.put(540.0, Items.GOLD_BLOCK);
         BaseValues.put(1260.0, Items.EMERALD_BLOCK);
         BaseValues.put(3600.0, Items.DIAMOND_BLOCK);
@@ -166,6 +180,29 @@ public final class BaseValues {
         BaseValues.put(120.0, Items.RECOVERY_COMPASS);
         BaseValues.put(300.0, Items.HEART_OF_THE_SEA, Items.SPONGE);
         BaseValues.put(600.0, Items.SADDLE, Items.NAME_TAG);
+        // Pottery sherds: easy dig sites — cut below rarityFallback (was ~150)
+        BaseValues.put(40.0,
+            Items.ANGLER_POTTERY_SHERD,
+            Items.ARCHER_POTTERY_SHERD,
+            Items.ARMS_UP_POTTERY_SHERD,
+            Items.BLADE_POTTERY_SHERD,
+            Items.BREWER_POTTERY_SHERD,
+            Items.BURN_POTTERY_SHERD,
+            Items.DANGER_POTTERY_SHERD,
+            Items.EXPLORER_POTTERY_SHERD,
+            Items.FRIEND_POTTERY_SHERD,
+            Items.HEART_POTTERY_SHERD,
+            Items.HEARTBREAK_POTTERY_SHERD,
+            Items.HOWL_POTTERY_SHERD,
+            Items.MINER_POTTERY_SHERD,
+            Items.MOURNER_POTTERY_SHERD,
+            Items.PLENTY_POTTERY_SHERD,
+            Items.PRIZE_POTTERY_SHERD,
+            Items.SHEAF_POTTERY_SHERD,
+            Items.SHELTER_POTTERY_SHERD,
+            Items.SKULL_POTTERY_SHERD,
+            Items.SNORT_POTTERY_SHERD
+        );
         // Horse armor is uncraftable (except leather) - without pins it falls to rarityFallback=1
         BaseValues.put(80.0, Items.LEATHER_HORSE_ARMOR);
         BaseValues.put(250.0, Items.IRON_HORSE_ARMOR);
