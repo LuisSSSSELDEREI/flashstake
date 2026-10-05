@@ -6,11 +6,11 @@
 
 ## Скачать Forge
 
-- [Скачать для 1.21.4](https://github.com/LuisSSSSELDEREI/flashstake/releases/download/v1.1.9-1.21.4/flashstake-1.21.4-1.1.9.jar)
-- [Скачать для 1.21.1](https://github.com/LuisSSSSELDEREI/flashstake/releases/download/v1.1.9-1.21.1/flashstake-1.21.1-1.1.9.jar)
-- [Скачать для 1.20.4](https://github.com/LuisSSSSELDEREI/flashstake/releases/download/v1.1.9-1.20.4/flashstake-1.20.4-1.1.9.jar)
-- [Скачать для 1.20.1](https://github.com/LuisSSSSELDEREI/flashstake/releases/download/v1.1.9-1.20.1/flashstake-1.20.1-1.1.9.jar)
-- [Скачать для 1.19.2](https://github.com/LuisSSSSELDEREI/flashstake/releases/download/v1.1.14-1.19.2/flashstake-1.19.2-1.1.14.jar)
+- [Скачать для 1.21.4](https://github.com/LuisSSSSELDEREI/flashstake/releases/download/v1.2.0-1.21.4/flashstake-1.21.4-1.2.0.jar)
+- [Скачать для 1.21.1](https://github.com/LuisSSSSELDEREI/flashstake/releases/download/v1.2.0-1.21.1/flashstake-1.21.1-1.2.0.jar)
+- [Скачать для 1.20.4](https://github.com/LuisSSSSELDEREI/flashstake/releases/download/v1.2.0-1.20.4/flashstake-1.20.4-1.2.0.jar)
+- [Скачать для 1.20.1](https://github.com/LuisSSSSELDEREI/flashstake/releases/download/v1.2.0-1.20.1/flashstake-1.20.1-1.2.0.jar)
+- [Скачать для 1.19.2](https://github.com/LuisSSSSELDEREI/flashstake/releases/download/v1.2.0-1.19.2/flashstake-1.19.2-1.2.0.jar)
 
 Нужен **Forge** той же версии. Положи `.jar` в папку `mods`.
 
@@ -18,12 +18,12 @@
 
 Нужны **Fabric Loader** + [Fabric API](https://modrinth.com/mod/fabric-api). Forge и Fabric на одном сервере вместе не работают.
 
-- [Скачать Fabric для 1.21.11](https://github.com/LuisSSSSELDEREI/flashstake/releases/download/v1.1.21-fabric-1.21.11/flashstake-fabric-1.21.11-1.1.21-fabric.jar) (Java 21)
-- [Скачать Fabric для 1.21.4](https://github.com/LuisSSSSELDEREI/flashstake/releases/download/v1.1.11-fabric-1.21.4/flashstake-fabric-1.21.4-1.1.11-fabric.jar) (Java 21)
-- [Скачать Fabric для 1.21.1](https://github.com/LuisSSSSELDEREI/flashstake/releases/download/v1.1.11-fabric-1.21.1/flashstake-fabric-1.21.1-1.1.11-fabric.jar) (Java 21)
-- [Скачать Fabric для 1.20.4](https://github.com/LuisSSSSELDEREI/flashstake/releases/download/v1.1.11-fabric-1.20.4/flashstake-fabric-1.20.4-1.1.11-fabric.jar) (Java 17)
-- [Скачать Fabric для 1.20.1](https://github.com/LuisSSSSELDEREI/flashstake/releases/download/v1.1.11-fabric-1.20.1/flashstake-fabric-1.20.1-1.1.11-fabric.jar) (Java 17)
-- [Скачать Fabric для 1.19.2](https://github.com/LuisSSSSELDEREI/flashstake/releases/download/v1.1.16-fabric-1.19.2/flashstake-fabric-1.19.2-1.1.16-fabric.jar) (Java 17)
+- [Скачать Fabric для 1.21.11](https://github.com/LuisSSSSELDEREI/flashstake/releases/download/v1.2.0-fabric-1.21.11/flashstake-fabric-1.21.11-1.2.0-fabric.jar) (Java 21)
+- [Скачать Fabric для 1.21.4](https://github.com/LuisSSSSELDEREI/flashstake/releases/download/v1.2.0-fabric-1.21.4/flashstake-fabric-1.21.4-1.2.0-fabric.jar) (Java 21)
+- [Скачать Fabric для 1.21.1](https://github.com/LuisSSSSELDEREI/flashstake/releases/download/v1.2.0-fabric-1.21.1/flashstake-fabric-1.21.1-1.2.0-fabric.jar) (Java 21)
+- [Скачать Fabric для 1.20.4](https://github.com/LuisSSSSELDEREI/flashstake/releases/download/v1.2.0-fabric-1.20.4/flashstake-fabric-1.20.4-1.2.0-fabric.jar) (Java 17)
+- [Скачать Fabric для 1.20.1](https://github.com/LuisSSSSELDEREI/flashstake/releases/download/v1.2.0-fabric-1.20.1/flashstake-fabric-1.20.1-1.2.0-fabric.jar) (Java 17)
+- [Скачать Fabric для 1.19.2](https://github.com/LuisSSSSELDEREI/flashstake/releases/download/v1.2.0-fabric-1.19.2/flashstake-fabric-1.19.2-1.2.0-fabric.jar) (Java 17)
 
 ## Telegram
 
