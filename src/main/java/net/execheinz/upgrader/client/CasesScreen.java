@@ -39,6 +39,8 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
     private static final int REEL_W = 280;
     private static final int REEL_AREA_Y = 116;
     private static final int REEL_AREA_H = 140;
+    private static final int FEED_W = 92;
+    private static final int FEED_GAP = 6;
     private static final int FOOTER_Y = 286;
     private static final int STRIP_LENGTH = 56;
     private static final int WINNER_INDEX = 46;
@@ -127,6 +129,8 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
     protected void init() {
         super.init();
         UiCursor.scheduleRestore();
+        // Center panel+drop-feed together so the feed never clips off-screen.
+        this.leftPos = (this.width - this.imageWidth - FEED_W - FEED_GAP) / 2 + FEED_W + FEED_GAP;
         int x = this.leftPos;
         int y = this.topPos;
         this.backButton = this.addRenderableWidget(StyledButton.chip(x + 8, y + 6, 50, 16,
@@ -185,6 +189,7 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
             return;
         }
         if (this.mode == Mode.CASES) {
+            UiCursor.captureIfInFlashStakeUi();
             ModNetwork.sendToServer(new ServerboundOpenUpgraderPacket());
         } else {
             this.setMode(Mode.CASES);
@@ -443,12 +448,18 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
         this.renderTooltip(graphics.pose(), mouseX, mouseY);
     }
 
+    
+    private int feedLeft() {
+        return this.leftPos - FEED_W - FEED_GAP;
+    }
+
+    private int contentWidth() {
+        return this.imageWidth + FEED_W + FEED_GAP;
+    }
+
     private void renderDropFeed(GuiGraphics graphics, int mouseX, int mouseY) {
-        int feedW = 92;
-        int fx = this.leftPos - feedW - 6;
-        if (fx < 2) {
-            return;
-        }
+        int feedW = FEED_W;
+        int fx = this.feedLeft();
         int fy = this.topPos;
         int fh = Math.min(this.imageHeight, 220);
         WheelRenderer.neonPanel(graphics, fx, fy, fx + feedW, fy + fh, 6, UiTheme.NEON_CYAN);
@@ -533,13 +544,28 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
             if (!this.blitCover(graphics, def, x, y, cellW, cellH)) {
                 graphics.fill(x, y, x + cellW, y + cellH, -14802128);
             }
-            graphics.fillGradient(x, y + cellH / 2, x + cellW, y + cellH, 0x00000000, 0xD0000000);
             if (over) {
                 graphics.fill(x, y, x + cellW, y + cellH, 0x30FFFFFF);
             }
-            graphics.drawCenteredString(this.font, Component.translatable(def.nameKey()), x + cellW / 2, y + cellH - 22, -1);
+            this.drawCaseLabel(graphics, Component.translatable(def.nameKey()), x + cellW / 2, y + cellH - 22, cellW - 6, -1);
             graphics.drawCenteredString(this.font, Component.literal(format(def.price())), x + cellW / 2, y + cellH - 11, -865972);
         }
+    }
+
+    /** Scale long titles (e.g. «Инструменты») so they stay inside the tile. */
+    private void drawCaseLabel(GuiGraphics graphics, Component label, int cx, int y, int maxW, int color) {
+        int tw = this.font.width(label);
+        if (tw <= maxW) {
+            graphics.drawCenteredString(this.font, label, cx, y, color);
+            return;
+        }
+        float scale = (float) maxW / (float) tw;
+        var pose = graphics.pose();
+        pose.pushPose();
+        pose.translate(cx, y, 0.0);
+        pose.scale(scale, scale, 1.0f);
+        graphics.drawCenteredString(this.font, label, 0, 0, color);
+        pose.popPose();
     }
 
     /** Draws the case art scaled to cover the box, cropping the centre like CSS object-fit: cover. */
@@ -724,29 +750,22 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
             this.leftPos + 10, this.topPos + 112, -7892829, false);
         ArrayList<CaseDefinition.CaseEntry> sorted = new ArrayList<>(def.pool());
         sorted.sort((a, b) -> Integer.compare(b.tier().ordinal(), a.tier().ordinal()));
-        int n = Math.min(sorted.size(), 24);
+        int n = Math.min(sorted.size(), 36);
         if (n <= 0) {
             return;
         }
         int pad = 10;
         int gap = 3;
         int inner = this.imageWidth - pad * 2;
-        int maxCols = Math.max(1, (inner + gap) / (20 + gap));
-        int cols = Math.min(n, maxCols);
-        int bestEmpty = Integer.MAX_VALUE;
-        for (int c = 1; c <= Math.min(n, maxCols); ++c) {
-            int last = n % c == 0 ? c : n % c;
-            int empty = c - last;
-            if (empty < bestEmpty || (empty == bestEmpty && c > cols)) {
-                bestEmpty = empty;
-                cols = c;
-            }
-        }
-        int cell = (inner - (cols - 1) * gap) / cols;
-        cell = Math.max(20, cell);
+        // Fixed cell size: old "minimize empty" picker chose cols=1 for prime pool sizes
+        // (e.g. farm=19) and stretched one slot across the whole panel.
+        final int cell = 22;
+        int cols = Math.max(1, Math.min(n, (inner + gap) / (cell + gap)));
         int used = cols * cell + (cols - 1) * gap;
         int startX = this.leftPos + pad + Math.max(0, (inner - used) / 2);
         int startY = this.topPos + 120;
+        CaseDefinition.CaseEntry hoveredPreview = null;
+        ItemStack hoveredPreviewStack = null;
         for (int i = 0; i < n; ++i) {
             CaseDefinition.CaseEntry entry = sorted.get(i);
             int x = startX + (i % cols) * (cell + gap);
@@ -760,15 +779,20 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
             int iy = y + (cell - 16) / 2 - 1;
             graphics.renderItem(stack, ix, iy);
             graphics.renderItemDecorations(this.font, stack, ix, iy);
-            if (!over || this.minecraft == null || this.minecraft.level == null) {
-                continue;
+            if (over) {
+                hoveredPreview = entry;
+                hoveredPreviewStack = stack;
             }
-            double chance = CaseLoot.chancePercent(this.minecraft.level, def, entry);
-            long value = Math.round(ItemValues.stackValue(this.minecraft.level, stack));
+        }
+
+        if (hoveredPreview != null && hoveredPreviewStack != null
+                && this.minecraft != null && this.minecraft.level != null) {
+            double chance = CaseLoot.chancePercent(this.minecraft.level, def, hoveredPreview);
+            long value = Math.round(ItemValues.stackValue(this.minecraft.level, hoveredPreviewStack));
             graphics.renderComponentTooltip(this.font, List.of(
-                stack.getHoverName(),
-                Component.translatable("gui.flashstake.cases.tier." + entry.tier().name().toLowerCase(Locale.ROOT))
-                    .withStyle(tierStyle(entry.tier())),
+                hoveredPreviewStack.getHoverName(),
+                Component.translatable("gui.flashstake.cases.tier." + hoveredPreview.tier().name().toLowerCase(Locale.ROOT))
+                    .withStyle(tierStyle(hoveredPreview.tier())),
                 Component.translatable("gui.flashstake.value", format(value)).withStyle(ChatFormatting.GOLD),
                 Component.translatable("gui.flashstake.cases.drop_chance", String.format(Locale.ROOT, "%.2f%%", chance))
                     .withStyle(ChatFormatting.GRAY)

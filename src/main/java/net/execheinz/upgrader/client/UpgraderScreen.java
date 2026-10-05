@@ -1,31 +1,6 @@
-/*
- * Decompiled with CFR 0.152.
- * 
- * Could not load the following classes:
- *  net.minecraft.ChatFormatting
- *  net.execheinz.upgrader.client.GuiGraphics
- *  net.minecraft.client.gui.components.EditBox
- *  net.minecraft.client.gui.components.events.GuiEventListener
- *  net.minecraft.client.gui.screens.inventory.AbstractContainerScreen
- *  net.minecraft.client.resources.sounds.SimpleSoundInstance
- *  net.minecraft.client.resources.sounds.SoundInstance
- *  net.minecraft.network.chat.Component
- *  net.minecraft.network.chat.FormattedText
- *  net.minecraft.network.chat.MutableComponent
- *  net.minecraft.sounds.SoundEvent
- *  net.minecraft.sounds.SoundEvents
- *  net.minecraft.util.FormattedCharSequence
- *  net.minecraft.util.Mth
- *  net.minecraft.world.entity.player.Inventory
- *  net.minecraft.world.inventory.AbstractContainerMenu
- *  net.minecraft.world.item.Item
- *  net.minecraft.world.item.ItemStack
- *  net.minecraft.world.level.ItemLike
- *  net.minecraft.world.level.Level
- *  net.minecraftforge.registries.ForgeRegistries
- */
 package net.execheinz.upgrader.client;
 
+import net.minecraft.core.Registry;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import java.util.ArrayList;
@@ -68,7 +43,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.registries.ForgeRegistries;
 import com.mojang.math.Vector3f;
 
 public class UpgraderScreen
@@ -173,14 +147,31 @@ extends AbstractContainerScreen<UpgraderMenu> {
         this.fastUpgradeButton = StyledButton.neon(x + 116, y + ROW_Y, 22, ROW_H, Component.literal("\u26A1"), UiTheme.NEON_GOLD, b -> ModNetwork.sendToServer(new ServerboundStartUpgradePacket(true)));
         this.addRenderableWidget(this.fastUpgradeButton);
         // Nav — flush top-left corner (title sits below, above the wheel)
-        this.marketButton = StyledButton.neon(x + 3, y + 1, 34, 11, Component.translatable("gui.flashstake.market"), UiTheme.NEON_GOLD, b -> ModNetwork.sendToServer(new ServerboundOpenMarketPacket()));
+        this.marketButton = StyledButton.neon(x + 3, y + 1, 34, 11, Component.translatable("gui.flashstake.market"), UiTheme.NEON_GOLD, b -> {
+            FlashFx.click();
+            UiCursor.captureIfInFlashStakeUi();
+            ModNetwork.sendToServer(new ServerboundOpenMarketPacket());
+        });
         this.addRenderableWidget(this.marketButton);
-        this.casesButton = StyledButton.neon(x + 39, y + 1, 34, 11, Component.translatable("gui.flashstake.cases"), UiTheme.NEON_MAGENTA, b -> ModNetwork.sendToServer(new ServerboundOpenCasesPacket()));
+        this.casesButton = StyledButton.neon(x + 39, y + 1, 34, 11, Component.translatable("gui.flashstake.cases"), UiTheme.NEON_MAGENTA, b -> {
+            FlashFx.click();
+            UiCursor.captureIfInFlashStakeUi();
+            ModNetwork.sendToServer(new ServerboundOpenCasesPacket());
+        });
         this.addRenderableWidget(this.casesButton);
-        this.doubleButton = StyledButton.neon(x + 75, y + 1, 34, 11, Component.translatable("gui.flashstake.double"), UiTheme.NEON_LIME, b -> ModNetwork.sendToServer(new ServerboundOpenDoublePacket()));
+        this.doubleButton = StyledButton.neon(x + 75, y + 1, 34, 11, Component.translatable("gui.flashstake.double"), UiTheme.NEON_LIME, b -> {
+            FlashFx.click();
+            UiCursor.captureIfInFlashStakeUi();
+            ModNetwork.sendToServer(new ServerboundOpenDoublePacket());
+        });
         this.addRenderableWidget(this.doubleButton);
-        this.arenaButton = StyledButton.neon(x + 111, y + 1, 34, 11, Component.translatable("gui.flashstake.arena"), UiTheme.NEON_PURPLE, b -> ModNetwork.sendToServer(new ServerboundOpenArenaPacket()));
+        this.arenaButton = StyledButton.neon(x + 111, y + 1, 34, 11, Component.translatable("gui.flashstake.arena"), UiTheme.NEON_PURPLE, b -> {
+            FlashFx.click();
+            UiCursor.captureIfInFlashStakeUi();
+            ModNetwork.sendToServer(new ServerboundOpenArenaPacket());
+        });
         this.addRenderableWidget(this.arenaButton);
+        UiCursor.scheduleRestore();
         this.minusButton = StyledButton.neon(x + TARGET_X - 19, y + CARD_Y2 - 22, 18, 16, Component.literal("-"), UiTheme.NEON_CYAN, b -> this.adjustTargetCount(-1, hasShiftDown()));
         this.plusButton = StyledButton.neon(x + TARGET_X + 19, y + CARD_Y2 - 22, 18, 16, Component.literal("+"), UiTheme.NEON_CYAN, b -> this.adjustTargetCount(1, hasShiftDown()));
         this.addRenderableWidget(this.minusButton);
@@ -202,21 +193,30 @@ extends AbstractContainerScreen<UpgraderMenu> {
         this.searchBox = new EditBox(this.font, x + 16, y + 26, 118, 16, Component.translatable("gui.flashstake.search"));
         this.searchBox.setMaxLength(64);
         this.searchBox.setTextColor(UiTheme.TEXT);
+        String searchHint = Component.translatable("gui.flashstake.search").getString();
+        this.searchBox.setSuggestion(searchHint);
         this.searchBox.setResponder(text -> {
+            this.searchBox.setSuggestion(text == null || text.isEmpty() ? searchHint : null);
             this.scrollRow = 0;
             this.refilter();
         });
         this.minPriceBox = new EditBox(this.font, x + 140, y + 26, 36, 16, Component.literal("min"));
         this.minPriceBox.setMaxLength(10);
         this.minPriceBox.setTextColor(UiTheme.NEON_LIME);
+        String minHint = Component.translatable("gui.flashstake.market.min").getString();
+        this.minPriceBox.setSuggestion(minHint);
         this.minPriceBox.setResponder(t -> {
+            this.minPriceBox.setSuggestion(t == null || t.isEmpty() ? minHint : null);
             this.scrollRow = 0;
             this.refilter();
         });
         this.maxPriceBox = new EditBox(this.font, x + 180, y + 26, 36, 16, Component.literal("max"));
         this.maxPriceBox.setMaxLength(10);
         this.maxPriceBox.setTextColor(UiTheme.NEON_MAGENTA);
+        String maxHint = Component.translatable("gui.flashstake.market.max").getString();
+        this.maxPriceBox.setSuggestion(maxHint);
         this.maxPriceBox.setResponder(t -> {
+            this.maxPriceBox.setSuggestion(t == null || t.isEmpty() ? maxHint : null);
             this.scrollRow = 0;
             this.refilter();
         });
@@ -387,6 +387,7 @@ extends AbstractContainerScreen<UpgraderMenu> {
     }
 
     public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
+        UiCursor.tickInRender();
         GuiGraphics graphics = GuiGraphics.of(poseStack);        boolean ready;
         boolean bl = ready = !this.spinning && !this.pickerOpen;
         UpgraderMenu menu = this.menu;
@@ -440,16 +441,41 @@ extends AbstractContainerScreen<UpgraderMenu> {
             this.plusButton.visible = !this.pickerOpen && menu.getTarget() != null;
         }
         this.renderBackground(poseStack);
-        super.render(graphics.pose(), mouseX, mouseY, partialTick);
         if (this.pickerOpen) {
-            this.renderPicker(graphics, mouseX, mouseY, partialTick);
-        } else {
-            this.renderTargetTooltip(graphics, mouseX, mouseY);
+            // Full picker cover — do not call super.render (inventory stack counts bleed through).
+            this.renderPickerOnly(graphics, mouseX, mouseY, partialTick);
+            return;
         }
+        super.render(graphics.pose(), mouseX, mouseY, partialTick);
+        this.renderTargetTooltip(graphics, mouseX, mouseY);
+    }
+
+    /** Full-window picker: covers inventory so slot counts cannot show through. */
+    private void renderPickerOnly(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        int x = this.leftPos;
+        int y = this.topPos;
+        WheelRenderer.neonPanel(graphics, x, y, x + WIDTH, y + HEIGHT, 8, UiTheme.NEON_PURPLE);
+        if (this.searchBox != null) {
+            this.searchBox.render(graphics.pose(), mouseX, mouseY, partialTick);
+        }
+        if (this.minPriceBox != null) {
+            this.minPriceBox.render(graphics.pose(), mouseX, mouseY, partialTick);
+        }
+        if (this.maxPriceBox != null) {
+            this.maxPriceBox.render(graphics.pose(), mouseX, mouseY, partialTick);
+        }
+        if (this.pickerSortButton != null && this.pickerSortButton.visible) {
+            this.pickerSortButton.render(graphics.pose(), mouseX, mouseY, partialTick);
+        }
+        this.renderPicker(graphics, mouseX, mouseY, partialTick);
     }
 
     protected void renderBg(PoseStack poseStack, float partialTick, int mouseX, int mouseY) {
-        GuiGraphics graphics = GuiGraphics.of(poseStack);        int x = this.leftPos;
+        if (this.pickerOpen) {
+            return;
+        }
+        GuiGraphics graphics = GuiGraphics.of(poseStack);
+        int x = this.leftPos;
         int y = this.topPos;
         WheelRenderer.neonPanel(graphics, x, y, x + WIDTH, y + HEIGHT, 8, UiTheme.NEON_CYAN);
         this.renderCard(graphics, x + CARD_L_X1, y + CARD_Y1, UiTheme.NEON_BLUE);
@@ -457,9 +483,7 @@ extends AbstractContainerScreen<UpgraderMenu> {
         WheelRenderer.neonSlot(graphics, x + INPUT_X, y + INPUT_Y);
         WheelRenderer.neonSlot(graphics, x + TARGET_X, y + TARGET_Y);
         this.renderCardText(graphics);
-        if (!this.pickerOpen) {
-            this.renderWheel(graphics);
-        }
+        this.renderWheel(graphics);
         this.renderInventoryBg(graphics);
     }
 
@@ -589,12 +613,9 @@ extends AbstractContainerScreen<UpgraderMenu> {
 
     private void renderPicker(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         int index;
-        graphics.pose().pushPose();
-        graphics.pose().translate(0.0f, 0.0f, 300.0f);
-        WheelRenderer.neonPanel(graphics, this.leftPos + PICKER_X1, this.topPos + PICKER_Y1, this.leftPos + PICKER_X2, this.topPos + PICKER_Y2, 6, UiTheme.NEON_PURPLE);
-        this.searchBox.render(graphics.pose(), mouseX, mouseY, partialTick);
-        this.minPriceBox.render(graphics.pose(), mouseX, mouseY, partialTick);
-        this.maxPriceBox.render(graphics.pose(), mouseX, mouseY, partialTick);
+        // Outer panel already drawn by renderPickerOnly — content only
+        graphics.drawCenteredString(this.font, Component.translatable("gui.flashstake.pick_target"),
+            this.leftPos + WIDTH / 2, this.topPos + 8, UiTheme.NEON_PURPLE);
         graphics.drawString(this.font, Component.translatable("gui.flashstake.market.filters"),
             this.leftPos + 140, this.topPos + 48, TEXT_DIM, false);
         int first = this.scrollRow * GRID_COLS;
@@ -610,7 +631,7 @@ extends AbstractContainerScreen<UpgraderMenu> {
             hovered = stack;
         }
         int pages = Math.max(1, this.maxScrollRow() + 1);
-        graphics.drawCenteredString(this.font, Component.translatable("gui.flashstake.picker_footer", this.filtered.size(), this.scrollRow + 1, pages), this.leftPos + WIDTH / 2, this.topPos + PICKER_Y2 - 14, TEXT_DIM);
+        graphics.drawCenteredString(this.font, Component.translatable("gui.flashstake.picker_footer", this.filtered.size(), this.scrollRow + 1, pages), this.leftPos + WIDTH / 2, this.topPos + HEIGHT - 14, TEXT_DIM);
         this.renderPickerScrollbar(graphics, mouseX, mouseY);
         if (hovered != null) {
             ArrayList<Component> lines = new ArrayList<>();
@@ -624,7 +645,6 @@ extends AbstractContainerScreen<UpgraderMenu> {
             }
             graphics.renderComponentTooltip(this.font, lines, mouseX, mouseY);
         }
-        graphics.pose().popPose();
     }
 
     private void ensureCatalog() {
@@ -647,6 +667,9 @@ extends AbstractContainerScreen<UpgraderMenu> {
         this.searchBox.setValue("");
         this.minPriceBox.setValue("");
         this.maxPriceBox.setValue("");
+        this.searchBox.setSuggestion(Component.translatable("gui.flashstake.search").getString());
+        this.minPriceBox.setSuggestion(Component.translatable("gui.flashstake.market.min").getString());
+        this.maxPriceBox.setSuggestion(Component.translatable("gui.flashstake.market.max").getString());
         if (this.pickerSortButton != null) {
             this.pickerSortButton.visible = true;
         }
@@ -701,7 +724,7 @@ extends AbstractContainerScreen<UpgraderMenu> {
             }
             if (!query.isEmpty()) {
                 String name = stack.getHoverName().getString().toLowerCase(Locale.ROOT);
-                String id = String.valueOf(ForgeRegistries.ITEMS.getKey(stack.getItem()));
+                String id = String.valueOf(Registry.ITEM.getKey(stack.getItem()));
                 if (!name.contains(query) && !id.contains(query)) {
                     continue;
                 }

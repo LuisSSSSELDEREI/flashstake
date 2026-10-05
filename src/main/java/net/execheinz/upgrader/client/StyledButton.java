@@ -88,4 +88,12 @@ public class StyledButton extends Button {
             graphics.fill(x + 3 + row, y + row + 3, x + 4 + row, y + row + 4, color);
         }
     }
+
+    @Override
+    public void onPress() {
+        if (this.active) {
+            FlashFx.softClick();
+        }
+        super.onPress();
+    }
 }

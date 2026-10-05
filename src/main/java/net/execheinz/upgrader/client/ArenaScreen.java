@@ -457,6 +457,7 @@ public class ArenaScreen extends AbstractContainerScreen<ArenaMenu> {
         GuiGraphics graphics = GuiGraphics.of(poseStack);
         UiCursor.tickInRender();
         graphics.fill(0, 0, this.width, this.height, 0xC0101010);
+        this.renderBg(poseStack, partialTick, mouseX, mouseY);
         super.render(graphics.pose(), mouseX, mouseY, partialTick);
 
         int x = this.leftPos;

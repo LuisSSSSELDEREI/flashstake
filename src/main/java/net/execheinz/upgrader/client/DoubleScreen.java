@@ -69,7 +69,11 @@ public class DoubleScreen extends AbstractContainerScreen<DoubleMenu> {
         int y = this.topPos;
         this.backButton = this.addRenderableWidget(StyledButton.chip(x + 8, y + 6, 50, 16,
             Component.translatable("gui.flashstake.market.back"), -1643790,
-            b -> ModNetwork.sendToServer(new ServerboundOpenUpgraderPacket())));
+            b -> {
+                UiCursor.captureIfInFlashStakeUi();
+                ModNetwork.sendToServer(new ServerboundOpenUpgraderPacket());
+            }));
+        UiCursor.scheduleRestore();
 
         DoubleColor[] colors = DoubleColor.values();
         for (int i = 0; i < 4; ++i) {
@@ -105,19 +109,50 @@ public class DoubleScreen extends AbstractContainerScreen<DoubleMenu> {
         if (clientPhase == DoubleGame.Phase.SPINNING.ordinal()) {
             this.startSpinVisual();
         }
+        this.refreshBetControls();
+    }
+
+    private boolean hasOwnBet() {
+        if (this.minecraft == null || this.minecraft.player == null) {
+            return false;
+        }
+        String name = this.minecraft.player.getGameProfile().getName();
+        for (ClientboundDoubleStatePacket.BetView bet : clientBets) {
+            if (name.equalsIgnoreCase(bet.playerName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void sendBet() {
+        if (this.hasOwnBet() || clientPhase != DoubleGame.Phase.BETTING.ordinal()) {
+            return;
+        }
         long amount;
         try {
             amount = Long.parseLong(this.betBox.getValue().trim());
         } catch (NumberFormatException e) {
             return;
         }
-        if (clientPhase != DoubleGame.Phase.BETTING.ordinal()) {
-            return;
-        }
+        FlashFx.confirm();
         ModNetwork.sendToServer(new ServerboundDoubleBetPacket(this.selected.ordinal(), amount));
+    }
+
+    private void refreshBetControls() {
+        boolean betting = clientPhase == DoubleGame.Phase.BETTING.ordinal();
+        boolean own = this.hasOwnBet();
+        boolean canBet = betting && !own;
+        this.betButton.active = canBet;
+        this.betButton.setMessage(Component.translatable(
+            own ? "gui.flashstake.double.bet_placed" : "gui.flashstake.double.bet"));
+        this.betBox.setEditable(canBet);
+        for (StyledButton btn : this.colorButtons) {
+            btn.active = canBet;
+        }
+        for (StyledButton btn : this.quickBets) {
+            btn.active = canBet;
+        }
     }
 
     private void startSpinVisual() {
@@ -128,6 +163,8 @@ public class DoubleScreen extends AbstractContainerScreen<DoubleMenu> {
         int winnerIndex = 40 + result.ordinal();
         double jitter = (Math.random() - 0.5) * CELL_W * 0.4;
         this.spinTarget = winnerIndex * CELL_W + CELL_W / 2.0 - REEL_W / 2.0 + jitter;
+        FlashFx.whoosh();
+        UiMotion.pulsePanel();
     }
 
     @Override
@@ -140,18 +177,22 @@ public class DoubleScreen extends AbstractContainerScreen<DoubleMenu> {
         if (clientPhase == DoubleGame.Phase.SPINNING.ordinal() && !this.spinningVisual) {
             this.startSpinVisual();
         }
-        if (this.spinningVisual && System.currentTimeMillis() - this.spinStartMs >= this.spinDurationMs) {
-            this.spinningVisual = false;
+        if (this.spinningVisual) {
+            long elapsed = System.currentTimeMillis() - this.spinStartMs;
+            if (elapsed < this.spinDurationMs) {
+                float tt = elapsed / (float) this.spinDurationMs;
+                FlashFx.tick(1.2f + tt * 0.8f);
+            } else {
+                this.spinningVisual = false;
+                FlashFx.win();
+            }
         }
-        boolean betting = clientPhase == DoubleGame.Phase.BETTING.ordinal();
-        this.betButton.active = betting;
-        for (StyledButton btn : this.colorButtons) {
-            btn.active = betting;
-        }
+        this.refreshBetControls();
     }
 
     @Override
     public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
+        UiCursor.tickInRender();
         GuiGraphics graphics = GuiGraphics.of(poseStack);        this.renderBackground(poseStack);
         super.render(graphics.pose(), mouseX, mouseY, partialTick);
         graphics.drawCenteredString(this.font,

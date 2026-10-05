@@ -37,9 +37,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.SpawnEggItem;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.crafting.AbstractCookingRecipe;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.UpgradeRecipe;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -547,7 +549,19 @@ public final class ItemValues {
             List<List<Item>> groups;
             ItemStack result;
             if (recipe.isSpecial() || (result = ItemValues.resultOf(recipe, access)).isEmpty() || result.getCount() <= 0) continue;
-            groups = ItemValues.craftingOptions(recipe);
+            // UpgradeRecipe (netherite smithing) does not expose getIngredients() — without this
+            // netherite gear/tools fall to rarityFallback=1.
+            if (recipe instanceof UpgradeRecipe upgrade) {
+                if (allStacks == null) {
+                    allStacks = new ArrayList<>(allItems.size());
+                    for (Item item : allItems) {
+                        allStacks.add(new ItemStack((ItemLike) item));
+                    }
+                }
+                groups = ItemValues.upgradeOptions(upgrade, allItems, allStacks, level);
+            } else {
+                groups = ItemValues.craftingOptions(recipe);
+            }
             if (groups == null || groups.isEmpty()) continue;
             normalized.add(new PricedRecipe(result.getItem(), result.getCount(), groups));
         }
@@ -570,6 +584,33 @@ public final class ItemValues {
             groups.add(group);
         }
         return groups;
+    }
+
+    /** 1.19.2 smithing: diamond gear + netherite ingot → netherite gear. */
+    @Nullable
+    private static List<List<Item>> upgradeOptions(UpgradeRecipe recipe, List<Item> allItems, List<ItemStack> allStacks, Level level) {
+        ArrayList<Item> addition = new ArrayList<>();
+        for (int i = 0; i < allItems.size(); ++i) {
+            if (recipe.isAdditionIngredient(allStacks.get(i))) {
+                addition.add(allItems.get(i));
+            }
+        }
+        if (addition.isEmpty()) {
+            return null;
+        }
+        SimpleContainer probe = new SimpleContainer(2);
+        probe.setItem(1, new ItemStack(addition.get(0)));
+        ArrayList<Item> base = new ArrayList<>();
+        for (int i = 0; i < allItems.size(); ++i) {
+            probe.setItem(0, allStacks.get(i));
+            if (recipe.matches(probe, level)) {
+                base.add(allItems.get(i));
+            }
+        }
+        if (base.isEmpty()) {
+            return null;
+        }
+        return List.of(base, addition);
     }
 
     @Nullable

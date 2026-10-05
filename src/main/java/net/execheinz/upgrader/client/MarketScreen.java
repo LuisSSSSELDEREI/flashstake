@@ -1,5 +1,6 @@
 package net.execheinz.upgrader.client;
 
+import net.minecraft.core.Registry;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import java.util.ArrayList;
@@ -27,7 +28,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.registries.ForgeRegistries;
 
 public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
     private enum SortMode {
@@ -67,6 +67,7 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
     private StyledButton buyTab;
     private StyledButton sellTab;
     private StyledButton backButton;
+    private ItemStack buyHoverStack;
     private StyledButton sortButton;
 
     private Item buyItem;
@@ -109,7 +110,7 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
     }
 
     private static int stockOf(Item item) {
-        ResourceLocation key = ForgeRegistries.ITEMS.getKey(item);
+        ResourceLocation key = Registry.ITEM.getKey(item);
         if (key == null) {
             return 0;
         }
@@ -152,12 +153,19 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
             }));
         this.backButton = this.addRenderableWidget(StyledButton.neon(x + this.imageWidth - 68, y + 4, 60, 16,
             Component.translatable("gui.flashstake.market.back"), UiTheme.NEON_CYAN,
-            b -> ModNetwork.sendToServer(new ServerboundOpenUpgraderPacket())));
+            b -> {
+                UiCursor.captureIfInFlashStakeUi();
+                ModNetwork.sendToServer(new ServerboundOpenUpgraderPacket());
+            }));
+        UiCursor.scheduleRestore();
 
         this.searchBox = new EditBox(this.font, x + 12, y + 36, 160, 16, Component.translatable("gui.flashstake.search"));
         this.searchBox.setMaxLength(64);
         this.searchBox.setTextColor(UiTheme.TEXT);
+        String searchHint = Component.translatable("gui.flashstake.search").getString();
+        this.searchBox.setSuggestion(searchHint);
         this.searchBox.setResponder(t -> {
+            this.searchBox.setSuggestion(t == null || t.isEmpty() ? searchHint : null);
             this.scrollRow = 0;
             this.refilter();
         });
@@ -166,7 +174,10 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
         this.minPriceBox = new EditBox(this.font, x + 210, y + 36, 48, 16, Component.literal("min"));
         this.minPriceBox.setMaxLength(10);
         this.minPriceBox.setTextColor(UiTheme.NEON_LIME);
+        String minHint = Component.translatable("gui.flashstake.market.min").getString();
+        this.minPriceBox.setSuggestion(minHint);
         this.minPriceBox.setResponder(t -> {
+            this.minPriceBox.setSuggestion(t == null || t.isEmpty() ? minHint : null);
             this.scrollRow = 0;
             this.refilter();
         });
@@ -175,7 +186,10 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
         this.maxPriceBox = new EditBox(this.font, x + 270, y + 36, 48, 16, Component.literal("max"));
         this.maxPriceBox.setMaxLength(10);
         this.maxPriceBox.setTextColor(UiTheme.NEON_MAGENTA);
+        String maxHint = Component.translatable("gui.flashstake.market.max").getString();
+        this.maxPriceBox.setSuggestion(maxHint);
         this.maxPriceBox.setResponder(t -> {
+            this.maxPriceBox.setSuggestion(t == null || t.isEmpty() ? maxHint : null);
             this.scrollRow = 0;
             this.refilter();
         });
@@ -332,12 +346,13 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
         if (this.buyItem == null || this.buyCount <= 0) {
             return;
         }
-        ResourceLocation key = ForgeRegistries.ITEMS.getKey(this.buyItem);
+        ResourceLocation key = Registry.ITEM.getKey(this.buyItem);
         if (key == null) {
             return;
         }
         ModNetwork.sendToServer(new ServerboundMarketBuyPacket(key.toString(), this.buyCount));
-        this.playClick();
+        FlashFx.confirm();
+        UiMotion.pulsePanel();
         this.closeBuyPanel();
     }
 
@@ -345,11 +360,12 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
         int units = this.menu.sellUnitCount();
         int left = sellRemaining();
         if (units <= 0 || units > left) {
-            this.playClick();
+            FlashFx.click();
             return;
         }
         ModNetwork.sendToServer(new ServerboundMarketSellPacket());
-        this.playClick();
+        FlashFx.confirm();
+        UiMotion.pulsePanel();
     }
 
     private void refreshSellButton() {
@@ -446,7 +462,7 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
             }
             if (!query.isEmpty()) {
                 String name = stack.getHoverName().getString().toLowerCase(Locale.ROOT);
-                String id = String.valueOf(ForgeRegistries.ITEMS.getKey(stack.getItem()));
+                String id = String.valueOf(Registry.ITEM.getKey(stack.getItem()));
                 if (!name.contains(query) && !id.contains(query)) {
                     continue;
                 }
@@ -511,6 +527,7 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
 
     @Override
     public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
+        UiCursor.tickInRender();
         GuiGraphics graphics = GuiGraphics.of(poseStack);        this.renderBackground(poseStack);
         super.render(graphics.pose(), mouseX, mouseY, partialTick);
         // Force buy qty controls above slots/panel so they stay clickable
@@ -524,6 +541,7 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
                     this.leftPos + 180, this.topPos + 40, UiTheme.TEXT_DIM, false);
                 this.renderBuyGrid(graphics, mouseX, mouseY);
                 this.renderScrollbar(graphics, mouseX, mouseY);
+                this.renderBuyHoverTooltip(graphics, mouseX, mouseY);
                 int rows = Math.max(1, (this.filtered.size() + GRID_COLS - 1) / GRID_COLS);
                 int page = this.scrollRow + 1;
                 int pages = Math.max(1, rows - GRID_ROWS + 1);
@@ -609,8 +627,7 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
     }
 
     private void renderBalanceBanner(GuiGraphics graphics) {
-        // Compact balance between sell and back tabs (top row)
-        Component label = Component.translatable("gui.flashstake.market.balance", format(clientBalance));
+        Component label = Component.translatable("gui.flashstake.market.balance", format(UiMotion.smoothBalance()));
         int tw = this.font.width(label);
         int cx = this.leftPos + this.imageWidth / 2;
         int y1 = this.topPos + 4;
@@ -618,6 +635,9 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
         int x2 = cx + tw / 2 + 8;
         WheelRenderer.neonBanner(graphics, x1, y1, x2, y1 + 16, UiTheme.NEON_GOLD);
         graphics.drawCenteredString(this.font, label, cx, y1 + 4, UiTheme.NEON_GOLD);
+        UiMotion.renderFloaters(graphics, this.font, cx + tw / 2 + 12, y1 + 4);
+        UiMotion.renderPanelPulse(graphics, this.leftPos, this.topPos,
+            this.leftPos + this.imageWidth, this.topPos + this.imageHeight, UiTheme.NEON_CYAN);
     }
 
     @Override
@@ -676,16 +696,26 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
                 hovered = stack;
             }
         }
-        if (hovered != null && this.minecraft != null && this.minecraft.level != null) {
-            long value = Math.round(ItemValues.unitValue(this.minecraft.level, hovered.getItem()) * Config.marketBuyRate);
-            int stock = stockOf(hovered.getItem());
-            graphics.renderComponentTooltip(this.font, List.of(
-                hovered.getHoverName(),
-                Component.translatable("gui.flashstake.value", format(value)).withStyle(ChatFormatting.GOLD),
-                Component.translatable("gui.flashstake.market.stock", stock).withStyle(stock > 0 ? ChatFormatting.GREEN : ChatFormatting.RED),
-                Component.translatable("gui.flashstake.market.buy_hint").withStyle(ChatFormatting.DARK_GRAY)
-            ), mouseX, mouseY);
+        this.buyHoverStack = hovered;
+    }
+
+    private void renderBuyHoverTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
+        ItemStack hovered = this.buyHoverStack;
+        this.buyHoverStack = null;
+        if (hovered == null || this.minecraft == null || this.minecraft.level == null) {
+            return;
         }
+        long value = Math.round(ItemValues.unitValue(this.minecraft.level, hovered.getItem()) * Config.marketBuyRate);
+        int stock = stockOf(hovered.getItem());
+        graphics.pose().pushPose();
+        graphics.pose().translate(0.0f, 0.0f, 400.0f);
+        graphics.renderComponentTooltip(this.font, List.of(
+            hovered.getHoverName(),
+            Component.translatable("gui.flashstake.value", format(value)).withStyle(ChatFormatting.GOLD),
+            Component.translatable("gui.flashstake.market.stock", stock).withStyle(stock > 0 ? ChatFormatting.GREEN : ChatFormatting.RED),
+            Component.translatable("gui.flashstake.market.buy_hint").withStyle(ChatFormatting.DARK_GRAY)
+        ), mouseX, mouseY);
+        graphics.pose().popPose();
     }
 
     private void renderSellHover(GuiGraphics graphics, int mouseX, int mouseY) {
