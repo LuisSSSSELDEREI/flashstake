@@ -4,10 +4,10 @@ license="All Rights Reserved"
 
 [[mods]]
 modId="flashstake"
-version="1.1.5"
+version="1.1.9"
 displayName="FlashStake"
 authors="flashlight and luis"
-description='''Апгрейд предметов, маркет, кейсы и дабл — экономика для сервера.'''
+description='''РђРїРіСЂРµР№Рґ РїСЂРµРґРјРµС‚РѕРІ, РјР°СЂРєРµС‚, РєРµР№СЃС‹ Рё РґР°Р±Р» вЂ” СЌРєРѕРЅРѕРјРёРєР° РґР»СЏ СЃРµСЂРІРµСЂР°.'''
 
 [[dependencies.flashstake]]
     modId="forge"
