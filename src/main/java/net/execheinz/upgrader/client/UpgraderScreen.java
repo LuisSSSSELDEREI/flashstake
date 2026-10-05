@@ -459,16 +459,37 @@ extends AbstractContainerScreen<UpgraderMenu> {
             this.arenaButton.active = ready;
             this.arenaButton.visible = !this.pickerOpen;
         }
-        // Cheap dim — skip vanilla blur/dirt
+        // Cheap dim — skip vanilla blur/dirt (full screen, not scaled)
         graphics.fill(0, 0, this.width, this.height, 0xC0101010);
-        if (this.pickerOpen) {
-            // Picker only — do not render the upgrade UI / inventory underneath.
-            this.renderPickerOnly(graphics, mouseX, mouseY, partialTick);
-            return;
+        float fit = this.fitScale();
+        int mx = UiFit.mouseXi(mouseX, this.leftPos, WIDTH, fit);
+        int my = UiFit.mouseYi(mouseY, this.topPos, HEIGHT, fit);
+        UiFit.push(graphics, this.leftPos, this.topPos, WIDTH, HEIGHT, fit);
+        try {
+            if (this.pickerOpen) {
+                // Picker only — do not render the upgrade UI / inventory underneath.
+                this.renderPickerOnly(graphics, mx, my, partialTick);
+                return;
+            }
+            super.render(graphics, mx, my, partialTick);
+            this.renderTargetTooltip(graphics, mx, my);
+        } finally {
+            UiFit.pop(graphics, fit);
         }
-        super.render(graphics, mouseX, mouseY, partialTick);
-        this.renderTargetTooltip(graphics, mouseX, mouseY);
     }
+
+    private float fitScale() {
+        return UiFit.scale(WIDTH, HEIGHT, this.width, this.height);
+    }
+
+    private double fitX(double mouseX) {
+        return UiFit.mouseX(mouseX, this.leftPos, WIDTH, this.fitScale());
+    }
+
+    private double fitY(double mouseY) {
+        return UiFit.mouseY(mouseY, this.topPos, HEIGHT, this.fitScale());
+    }
+
 
     /** Full-screen picker mode: no inventory bleed, no upgrade widgets behind. */
     private void renderPickerOnly(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
@@ -856,6 +877,8 @@ extends AbstractContainerScreen<UpgraderMenu> {
     }
 
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        mouseX = this.fitX(mouseX);
+        mouseY = this.fitY(mouseY);
         if (this.pickerOpen) {
             int index;
             if (this.pickerSortButton != null && this.pickerSortButton.visible
@@ -919,6 +942,8 @@ extends AbstractContainerScreen<UpgraderMenu> {
     }
 
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        mouseX = this.fitX(mouseX);
+        mouseY = this.fitY(mouseY);
         if (button == 0 && this.scrollDragging) {
             this.scrollDragging = false;
             return true;
@@ -927,6 +952,11 @@ extends AbstractContainerScreen<UpgraderMenu> {
     }
 
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        float fit = this.fitScale();
+        mouseX = UiFit.mouseX(mouseX, this.leftPos, WIDTH, fit);
+        mouseY = UiFit.mouseY(mouseY, this.topPos, HEIGHT, fit);
+        dragX = UiFit.delta(dragX, fit);
+        dragY = UiFit.delta(dragY, fit);
         if (this.pickerOpen && this.scrollDragging && button == 0) {
             this.applyScrollbarDrag(mouseY);
             return true;
@@ -935,6 +965,8 @@ extends AbstractContainerScreen<UpgraderMenu> {
     }
 
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        mouseX = this.fitX(mouseX);
+        mouseY = this.fitY(mouseY);
         if (this.pickerOpen) {
             this.scrollRow = Mth.clamp(this.scrollRow - (int) Math.signum(delta), 0, this.maxScrollRow());
             return true;

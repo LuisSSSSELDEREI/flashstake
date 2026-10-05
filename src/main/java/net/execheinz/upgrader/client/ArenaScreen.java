@@ -359,6 +359,8 @@ public class ArenaScreen extends AbstractContainerScreen<ArenaMenu> {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        mouseX = UiFit.mouseX(mouseX, this.leftPos, this.imageWidth, this.fitScale());
+        mouseY = UiFit.mouseY(mouseY, this.topPos, this.imageHeight, this.fitScale());
         if (this.tab == Tab.BATTLE && !battle.active()) {
             int listX = this.battleInviteListX();
             int y0 = this.battleInviteListY() + 18;
@@ -453,7 +455,13 @@ public class ArenaScreen extends AbstractContainerScreen<ArenaMenu> {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         UiCursor.tickInRender();
         graphics.fill(0, 0, this.width, this.height, 0xC0101010);
-        super.render(graphics, mouseX, mouseY, partialTick);
+        float fit = this.fitScale();
+        int mx = UiFit.mouseXi(mouseX, this.leftPos, this.imageWidth, fit);
+        int my = UiFit.mouseYi(mouseY, this.topPos, this.imageHeight, fit);
+        UiFit.push(graphics, this.leftPos, this.topPos, this.imageWidth, this.imageHeight, fit);
+        try {
+        this.renderBg(graphics, partialTick, mx, my);
+            super.render(graphics, mx, my, partialTick);
 
         int x = this.leftPos;
         int y = this.topPos;
@@ -484,19 +492,51 @@ public class ArenaScreen extends AbstractContainerScreen<ArenaMenu> {
             y + 28, UiTheme.TEXT_DIM, false);
 
         if (this.tab == Tab.BATTLE) {
-            this.renderBattle(graphics, x, y, mouseX, mouseY, now);
+            this.renderBattle(graphics, x, y, mx, my, now);
         } else if (this.tab == Tab.CONTRACT) {
-            this.renderContract(graphics, x, y, mouseX, mouseY);
+            this.renderContract(graphics, x, y, mx, my);
         } else {
-            this.renderDuel(graphics, x, y, mouseX, mouseY, now);
+            this.renderDuel(graphics, x, y, mx, my, now);
         }
 
         graphics.disableScissor();
         if (!this.pendingTooltip.isEmpty()) {
-            graphics.renderTooltip(this.font, this.pendingTooltip, mouseX, mouseY);
+            graphics.renderTooltip(this.font, this.pendingTooltip, mx, my);
             this.pendingTooltip = ItemStack.EMPTY;
         }
-        this.renderTooltip(graphics, mouseX, mouseY);
+        this.renderTooltip(graphics, mx, my);
+        } finally {
+            UiFit.pop(graphics, fit);
+        }
+    }
+
+    private float fitScale() {
+        return UiFit.scale(this.imageWidth, this.imageHeight, this.width, this.height);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        return super.mouseReleased(
+            UiFit.mouseX(mouseX, this.leftPos, this.imageWidth, this.fitScale()),
+            UiFit.mouseY(mouseY, this.topPos, this.imageHeight, this.fitScale()),
+            button);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        float fit = this.fitScale();
+        return super.mouseDragged(
+            UiFit.mouseX(mouseX, this.leftPos, this.imageWidth, fit),
+            UiFit.mouseY(mouseY, this.topPos, this.imageHeight, fit),
+            button, UiFit.delta(dragX, fit), UiFit.delta(dragY, fit));
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        return super.mouseScrolled(
+            UiFit.mouseX(mouseX, this.leftPos, this.imageWidth, this.fitScale()),
+            UiFit.mouseY(mouseY, this.topPos, this.imageHeight, this.fitScale()),
+            delta);
     }
 
     private void renderBattle(GuiGraphics g, int x, int y, int mouseX, int mouseY, long now) {

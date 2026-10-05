@@ -518,18 +518,23 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
         UiCursor.tickInRender();
         // Cheap dim — skip vanilla blur/dirt (big open hitch)
         graphics.fill(0, 0, this.width, this.height, 0xC0101010);
-        super.render(graphics, mouseX, mouseY, partialTick);
+        float fit = this.fitScale();
+        int mx = UiFit.mouseXi(mouseX, this.leftPos, this.imageWidth, fit);
+        int my = UiFit.mouseYi(mouseY, this.topPos, this.imageHeight, fit);
+        UiFit.push(graphics, this.leftPos, this.topPos, this.imageWidth, this.imageHeight, fit);
+        try {
+        super.render(graphics, mx, my, partialTick);
         // Force buy qty controls above slots/panel so they stay clickable
         if (this.buyPanelOpen()) {
-            this.renderBuyControls(graphics, mouseX, mouseY, partialTick);
+            this.renderBuyControls(graphics, mx, my, partialTick);
         }
         this.renderBalanceBanner(graphics);
         if (!this.buyPanelOpen()) {
             if (this.buyMode) {
                 graphics.drawString(this.font, Component.translatable("gui.flashstake.market.filters"),
                     this.leftPos + 180, this.topPos + 40, UiTheme.TEXT_DIM, false);
-                this.renderBuyGrid(graphics, mouseX, mouseY);
-                this.renderScrollbar(graphics, mouseX, mouseY);
+                this.renderBuyGrid(graphics, mx, my);
+                this.renderScrollbar(graphics, mx, my);
                 int rows = Math.max(1, (this.filtered.size() + GRID_COLS - 1) / GRID_COLS);
                 int page = this.scrollRow + 1;
                 int pages = Math.max(1, rows - GRID_ROWS + 1);
@@ -560,11 +565,27 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
                         Component.translatable("gui.flashstake.market.sell_total", format(payout)),
                         this.leftPos + this.imageWidth / 2, this.topPos + MarketMenu.SELL_Y + 62, UiTheme.NEON_LIME);
                 }
-                this.renderSellHover(graphics, mouseX, mouseY);
+                this.renderSellHover(graphics, mx, my);
             }
         }
-        this.renderTooltip(graphics, mouseX, mouseY);
+        this.renderTooltip(graphics, mx, my);
+        } finally {
+            UiFit.pop(graphics, fit);
+        }
     }
+
+    private float fitScale() {
+        return UiFit.scale(this.imageWidth, this.imageHeight, this.width, this.height);
+    }
+
+    private double fitX(double mouseX) {
+        return UiFit.mouseX(mouseX, this.leftPos, this.imageWidth, this.fitScale());
+    }
+
+    private double fitY(double mouseY) {
+        return UiFit.mouseY(mouseY, this.topPos, this.imageHeight, this.fitScale());
+    }
+
 
     private void renderBuyControls(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         if (this.buyCancel != null) {
@@ -726,6 +747,8 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        mouseX = this.fitX(mouseX);
+        mouseY = this.fitY(mouseY);
         if (this.buyPanelOpen()) {
             return super.mouseClicked(mouseX, mouseY, button);
         }
@@ -760,6 +783,8 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        mouseX = this.fitX(mouseX);
+        mouseY = this.fitY(mouseY);
         if (button == 0 && this.scrollDragging) {
             this.scrollDragging = false;
             return true;
@@ -769,6 +794,11 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        float fit = this.fitScale();
+        mouseX = UiFit.mouseX(mouseX, this.leftPos, this.imageWidth, fit);
+        mouseY = UiFit.mouseY(mouseY, this.topPos, this.imageHeight, fit);
+        dragX = UiFit.delta(dragX, fit);
+        dragY = UiFit.delta(dragY, fit);
         if (this.buyMode && !this.buyPanelOpen() && this.scrollDragging && button == 0) {
             this.applyScrollbarDrag(mouseY);
             return true;
@@ -778,6 +808,8 @@ public class MarketScreen extends AbstractContainerScreen<MarketMenu> {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        mouseX = this.fitX(mouseX);
+        mouseY = this.fitY(mouseY);
         if (this.buyMode && !this.buyPanelOpen()) {
             this.scrollRow = Mth.clamp(this.scrollRow - (int) Math.signum(delta) * Math.max(1, (int) Math.abs(delta)), 0, this.maxScrollRow());
             return true;

@@ -37,6 +37,8 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
     private static final int REEL_W = 280;
     private static final int REEL_AREA_Y = 116;
     private static final int REEL_AREA_H = 140;
+    private static final int FEED_W = 92;
+    private static final int FEED_GAP = 6;
     private static final int FOOTER_Y = 286;
     private static final int STRIP_LENGTH = 56;
     private static final int WINNER_INDEX = 46;
@@ -125,6 +127,8 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
     protected void init() {
         super.init();
         UiCursor.scheduleRestore();
+        // Center panel+drop-feed together so the feed never clips off-screen.
+        this.leftPos = (this.width - this.imageWidth - FEED_W - FEED_GAP) / 2 + FEED_W + FEED_GAP;
         int x = this.leftPos;
         int y = this.topPos;
         this.backButton = this.addRenderableWidget(StyledButton.chip(x + 8, y + 6, 50, 16,
@@ -428,25 +432,50 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
         UiCursor.tickInRender();
         this.updateWidgetStates();
         graphics.fill(0, 0, this.width, this.height, 0xC0101010);
-        super.render(graphics, mouseX, mouseY, partialTick);
-        graphics.drawCenteredString(this.font,
-            Component.translatable("gui.flashstake.market.balance", format(MarketScreen.getClientBalance())),
-            this.leftPos + this.imageWidth - 52, this.topPos + 10, UiTheme.NEON_GOLD);
-        this.renderDropFeed(graphics, mouseX, mouseY);
-        switch (this.mode) {
-            case CASES -> this.renderCaseGrid(graphics, mouseX, mouseY);
-            case DETAIL -> this.renderCaseDetail(graphics, mouseX, mouseY);
-            case STASH -> this.renderStash(graphics, mouseX, mouseY);
+        float fit = this.fitScale();
+        int mx = UiFit.mouseXi(mouseX, this.feedLeft(), this.contentWidth(), fit);
+        int my = UiFit.mouseYi(mouseY, this.topPos, this.imageHeight, fit);
+        UiFit.push(graphics, this.feedLeft(), this.topPos, this.contentWidth(), this.imageHeight, fit);
+        try {
+            super.render(graphics, mx, my, partialTick);
+            graphics.drawCenteredString(this.font,
+                Component.translatable("gui.flashstake.market.balance", format(MarketScreen.getClientBalance())),
+                this.leftPos + this.imageWidth - 52, this.topPos + 10, UiTheme.NEON_GOLD);
+            this.renderDropFeed(graphics, mx, my);
+            switch (this.mode) {
+                case CASES -> this.renderCaseGrid(graphics, mx, my);
+                case DETAIL -> this.renderCaseDetail(graphics, mx, my);
+                case STASH -> this.renderStash(graphics, mx, my);
+            }
+            this.renderTooltip(graphics, mx, my);
+        } finally {
+            UiFit.pop(graphics, fit);
         }
-        this.renderTooltip(graphics, mouseX, mouseY);
     }
 
+    private int feedLeft() {
+        return this.leftPos - FEED_W - FEED_GAP;
+    }
+
+    private int contentWidth() {
+        return this.imageWidth + FEED_W + FEED_GAP;
+    }
+    private float fitScale() {
+        return UiFit.scale(this.contentWidth(), this.imageHeight, this.width, this.height);
+    }
+
+    private double fitX(double mouseX) {
+        return UiFit.mouseX(mouseX, this.feedLeft(), this.contentWidth(), this.fitScale());
+    }
+
+    private double fitY(double mouseY) {
+        return UiFit.mouseY(mouseY, this.topPos, this.imageHeight, this.fitScale());
+    }
+
+
     private void renderDropFeed(GuiGraphics graphics, int mouseX, int mouseY) {
-        int feedW = 92;
-        int fx = this.leftPos - feedW - 6;
-        if (fx < 2) {
-            return;
-        }
+        int feedW = FEED_W;
+        int fx = this.feedLeft();
         int fy = this.topPos;
         int fh = Math.min(this.imageHeight, 220);
         WheelRenderer.neonPanel(graphics, fx, fy, fx + feedW, fy + fh, 6, UiTheme.NEON_CYAN);
@@ -722,29 +751,22 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
             this.leftPos + 10, this.topPos + 112, -7892829, false);
         ArrayList<CaseDefinition.CaseEntry> sorted = new ArrayList<>(def.pool());
         sorted.sort((a, b) -> Integer.compare(b.tier().ordinal(), a.tier().ordinal()));
-        int n = Math.min(sorted.size(), 24);
+        int n = Math.min(sorted.size(), 36);
         if (n <= 0) {
             return;
         }
         int pad = 10;
         int gap = 3;
         int inner = this.imageWidth - pad * 2;
-        int maxCols = Math.max(1, (inner + gap) / (20 + gap));
-        int cols = Math.min(n, maxCols);
-        int bestEmpty = Integer.MAX_VALUE;
-        for (int c = 1; c <= Math.min(n, maxCols); ++c) {
-            int last = n % c == 0 ? c : n % c;
-            int empty = c - last;
-            if (empty < bestEmpty || (empty == bestEmpty && c > cols)) {
-                bestEmpty = empty;
-                cols = c;
-            }
-        }
-        int cell = (inner - (cols - 1) * gap) / cols;
-        cell = Math.max(20, cell);
+        // Fixed cell size: old "minimize empty" picker chose cols=1 for prime pool sizes
+        // (e.g. farm=19) and stretched one slot across the whole panel.
+        final int cell = 22;
+        int cols = Math.max(1, Math.min(n, (inner + gap) / (cell + gap)));
         int used = cols * cell + (cols - 1) * gap;
         int startX = this.leftPos + pad + Math.max(0, (inner - used) / 2);
         int startY = this.topPos + 120;
+        CaseDefinition.CaseEntry hoveredPreview = null;
+        ItemStack hoveredPreviewStack = null;
         for (int i = 0; i < n; ++i) {
             CaseDefinition.CaseEntry entry = sorted.get(i);
             int x = startX + (i % cols) * (cell + gap);
@@ -758,15 +780,20 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
             int iy = y + (cell - 16) / 2 - 1;
             graphics.renderItem(stack, ix, iy);
             graphics.renderItemDecorations(this.font, stack, ix, iy);
-            if (!over || this.minecraft == null || this.minecraft.level == null) {
-                continue;
+            if (over) {
+                hoveredPreview = entry;
+                hoveredPreviewStack = stack;
             }
-            double chance = CaseLoot.chancePercent(this.minecraft.level, def, entry);
-            long value = Math.round(ItemValues.stackValue(this.minecraft.level, stack));
+        }
+
+        if (hoveredPreview != null && hoveredPreviewStack != null
+                && this.minecraft != null && this.minecraft.level != null) {
+            double chance = CaseLoot.chancePercent(this.minecraft.level, def, hoveredPreview);
+            long value = Math.round(ItemValues.stackValue(this.minecraft.level, hoveredPreviewStack));
             graphics.renderComponentTooltip(this.font, List.of(
-                stack.getHoverName(),
-                Component.translatable("gui.flashstake.cases.tier." + entry.tier().name().toLowerCase(Locale.ROOT))
-                    .withStyle(tierStyle(entry.tier())),
+                hoveredPreviewStack.getHoverName(),
+                Component.translatable("gui.flashstake.cases.tier." + hoveredPreview.tier().name().toLowerCase(Locale.ROOT))
+                    .withStyle(tierStyle(hoveredPreview.tier())),
                 Component.translatable("gui.flashstake.value", format(value)).withStyle(ChatFormatting.GOLD),
                 Component.translatable("gui.flashstake.cases.drop_chance", String.format(Locale.ROOT, "%.2f%%", chance))
                     .withStyle(ChatFormatting.GRAY)
@@ -863,6 +890,8 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        mouseX = this.fitX(mouseX);
+        mouseY = this.fitY(mouseY);
         int mx = (int) mouseX;
         int my = (int) mouseY;
         if (this.mode == Mode.CASES) {
@@ -928,6 +957,26 @@ public class CasesScreen extends AbstractContainerScreen<CasesMenu> {
             }
         }
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        return super.mouseReleased(this.fitX(mouseX), this.fitY(mouseY), button);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        float fit = this.fitScale();
+        return super.mouseDragged(
+            UiFit.mouseX(mouseX, this.feedLeft(), this.contentWidth(), fit),
+            UiFit.mouseY(mouseY, this.topPos, this.imageHeight, fit),
+            button, UiFit.delta(dragX, fit), UiFit.delta(dragY, fit));
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        return super.mouseScrolled(this.fitX(mouseX), this.fitY(mouseY), delta);
     }
 
     @Override
