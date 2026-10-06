@@ -1,5 +1,13 @@
 # FlashStake
 
+# МОД НА CURSEFORGE
+
+**→ [СКАЧАТЬ НА CURSEFORGE](https://www.curseforge.com/minecraft/mc-mods/flashstakes) ←**
+
+Мод официально выложен на CurseForge: [curseforge.com/minecraft/mc-mods/flashstakes](https://www.curseforge.com/minecraft/mc-mods/flashstakes)
+
+---
+
 Мод для Minecraft: апгрейд предметов, маркет, кейсы, дабл и арена.
 
 Открыть меню в игре — клавиша **U**.
